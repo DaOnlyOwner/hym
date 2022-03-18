@@ -9,7 +9,7 @@ struct PSInput
 void main(in uint vid : SV_VertexID,
           out PSInput PSIn) 
 {
-    // fullscreen triangle
+    // From: https://github.com/DiligentGraphics/DiligentSamples/blob/master/Tutorials/Tutorial22_HybridRendering/assets/PostProcess.vsh
     PSIn.UV  = float2(vid >> 1, vid & 1) * 2.0;
     PSIn.Pos = float4(PSIn.UV * 2.0 - 1.0, 0.0, 1.0);
 }
