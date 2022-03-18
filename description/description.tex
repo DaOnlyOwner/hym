@@ -1,0 +1,133 @@
+\documentclass{article}
+\usepackage{tcolorbox}
+\usepackage{lmodern}
+
+\title{Hym Game Engine - Overview}
+\author{DaOnlyOwner}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\section{Goal Overview}
+\begin{itemize}
+    \item This is my first engine so I will use plenty of libraries to support the development
+    \item Engine for small scale scenes (no open world)
+    \item Uses modern graphics APIs (Vulkan / DirectX 12 through Diligent Engine)
+    \item Uses innovative rendering approaches (Realtime GI through raytracing, GTAO etc.)
+    \item Nothing is static, everything can move without performance penalties.
+    \item CPU memory allocation: Uses the normal allocator. In the future this will be optimized.
+    \item Deferred rendering is used. 
+\end{itemize}
+
+\section{Class Overview Public Interfaces}
+\subsection{ResourceManager}
+This class represents the resource manager. 
+It manages GPU resources, such as vertex buffers or textures.
+Because the engine targets small scale scenes, we can afford loading all the scene resources into memory, static geometry, as well as dynamic resources that can despawn.
+This allows for the optimization that every mesh can be stored into one big vertex buffer and index buffer.
+When a mesh is spawned into the world, the spawned entity holds the location (\textit{index}) of the start of its first vertex and index in the buffer.
+This can only be done because resources are not unloaded. 
+If unloading would occur, the buffer shrinks (otherwise what's the point) and the locations (the indices) need to be updated for every spawned mesh.
+Same goes for textures. 
+This allows for bindless resources which will increase performance. 
+The second point is that a global buffer is needed in order to compute ray tracing data (i.e. getting the normal of the hitpoint, or sampling the texture of the hit object).\\
+The interface will support loading of meshes and textures.
+When loading a i.e. fbx file you can specify an alias name (i.e. \textit{scene1}) for that scene contained in the file. 
+To retrieve an object named for example \textit{obj1} from the scene file you ask the manager to return the model with identifier \textit{scene1} and \textit{obj1}. 
+If you want to retrieve the whole scene, the manager will return a vector of meshes from input \textit{scene1}.  
+The ResourceManager defines a Model as a Mesh together with a collection of textures.
+You will get back the model when asking for it. 
+Unloading: As stated, unloading shouldn't be necessary, the workflow in the editor might require deleting a model entirely from the resources. 
+In this case unloading is supported. Note that this shouldn't be done at runtime because it incurs a substantial performance cost. 
+% Colorbox layout from here: https://de.overleaf.com/latex/examples/drawing-coloured-boxes-using-tcolorbox/pvknncpjyfbp
+\begin{tcolorbox}[colback=blue!5!white,colframe=blue!75!black,title=ResourceManager Interface]
+    \begin{itemize}
+        \item \textit{LoadSceneFile(String filename, String alias);}
+        \item \textit{Model GetModel(String sceneAlias, String objectName);}
+        \item \textit{vector\textless Model \textgreater GetSceneModels(String sceneAlias);}
+        \item \textit{UnloadModel(String sceneAlias, String objectName, ArrayRef\textless Scene \textgreater scenesToUpdate);}
+        \item \textit{UnloadScene(String sceneAlias, ArrayRef \textless Scene \textgreater) scenesToUpdate)}
+    \end{itemize}    
+\end{tcolorbox}
+
+\subsection{Concept}
+A concept is similar to Unity's Prefab system. 
+It is a collection of components that work together. 
+Each component contains data, like position, render state etc. 
+This data is then used in the systems of the engine, like the renderer.
+The interface supports adding and removing components from the concept.
+A concept can only hold one component of each type.
+\begin{tcolorbox}[colback=blue!5!white,colframe=blue!75!black,title=Concept Interface]
+    \begin{itemize}
+        \item \textit{AddComponent \textless Comp \textgreater(Comp componentToAdd);}
+        \item \textit{Comp* GetComponent \textless Comp \textgreater();}
+        \item \textit{DelComponent\textless Comp \textgreater ();}
+        \item \textit{GetID();}
+        Returns the id of the component. 
+    \end{itemize}    
+\end{tcolorbox}
+
+\subsection{Scene}
+This class represents the scene. 
+You can add a concept to the scene, if it has a model component and a transform component, the model will be displayed at the position defined in the transform component.  
+When you add a concept, the scene returns an ID. You can use the ID as a way to handle state of the concept, such as updating components or removing the concept from the scene again.
+The scene can be serialized and deserialized.
+\begin{tcolorbox}[colback=blue!5!white,colframe=blue!75!black,title=Scene Interface]
+    \begin{itemize}
+        \item \textit{Scene(ResourceManager* resManager);}
+        \item \textit{Id AddConcept(const Concept* c);}
+        This function copies the contents of c into the scene and returns the new Id.
+        \item \textit{Concept* GetConcept(Id conceptId);}
+        \item \textit{EnableSun();}
+        \item \textit{DisableSun();}
+        \item \textit{Sun* GetSun();}
+        \item \textit{DelConcept(Id conceptID);}
+        \item \textit{Serialize(String path);}
+        \item \textit{Deserialize(String path);}
+    \end{itemize}    
+\end{tcolorbox}
+
+\subsection{Sun}
+The sun represents the directional light.
+You can set the time of day and the skysphere, color of the sunlight and direction of the sunbeams will adapt to the changes.
+Additionally you can set the direction and color yourself. 
+
+\subsection{Camera}
+This class represents a physical camera in the world. 
+You can retrieve the view and projection matrix from here, as well as set the eye position and the lookAt point. 
+FOV etc. can be specified here. 
+
+\subsection{Transform Component}
+This struct contains the transform of the entity. 
+You can retrieve the model matrix and the normal matrix from this component. 
+\begin{tcolorbox}[colback=blue!5!white,colframe=blue!75!black,title=Scene Interface]
+    \begin{itemize}
+        \item Field: \textit{vec3 rotation};
+        \item Field: \textit{vec3 position;}
+        \item Field: \textit{vec3 scale;}
+        \item \textit{mat4 GetNormal\_ModelMatrix();}
+    \end{itemize}    
+\end{tcolorbox}
+
+\subsection{Model Component}
+This component holds the mesh and a collection of textures. 
+The mesh holds a vertex and index offset into the global buffers as well as the size of its indices. (For indexed drawing). 
+The textures are just locations in the global texture buffer.
+
+
+
+\subsection{PointLight Component}
+WIP
+
+\subsection{SpotLight Component}
+WIP
+
+\subsection{AreaLight Component}
+WIP
+
+\subsection{Renderer}
+WIP
+
+
+
+\end{document}

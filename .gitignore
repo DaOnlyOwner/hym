@@ -1,0 +1,5 @@
+build
+resources/scenes
+description/*
+!description/description.tex
+!description/description.pdf
