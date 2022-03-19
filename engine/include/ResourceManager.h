@@ -33,12 +33,12 @@ namespace Hym
 		Texs& GetNormalTexs() { return normalTexs; }
 		Texs& GetMetalRoughnessTexs() { return metalRoughnessTexs; }
 		Texs& GetEmissiveTexs() { return emissiveTexs; }
+		void CreateBLASForScene(const std::string& scene);
 		void Init();
-
+		
 	private:
-		void preTransformNode(const aiNode& node, const aiScene& scene, std::vector<ModelComponent>& models, std::vector<Vertex>& vertices, std::vector<u32>& indices,
-			u32& vertexOffset, u32& indexOffset);
-		Mesh createMesh(u32 vAt, u32 iAt, u32 indexSize, u32 verticesSize, const char* name);
+		void preTransformNode(const aiNode& node, const aiScene& scene, std::vector<ModelComponent>& models, std::vector<Vertex>& vertices, std::vector<u32>& indices);
+		Mesh createMesh(u64 vAt, u64 iAt, u64 indexSize, u64 verticesSize, const char* name);
 		Material createMaterial(aiMaterial* ai_mat);
 		void upload(std::vector<Vertex>& vertices, std::vector<u32>& indices);
 
@@ -50,5 +50,8 @@ namespace Hym
 		Texs normalTexs;
 		Texs metalRoughnessTexs;
 		Texs emissiveTexs;
+		RefCntAutoPtr<dl::IBuffer> blasScratchBuffer;
+
+
 	};
 }

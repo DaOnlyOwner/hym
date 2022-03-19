@@ -6,7 +6,7 @@
 #include "Align.hpp"
 #include "GlobalState.h"
 
-Hym::u32 createVertices(aiMesh* p_assMesh, const aiMatrix4x4& trans, std::vector<Hym::Vertex>& vertices)
+void createVertices(aiMesh* p_assMesh, const aiMatrix4x4& trans, std::vector<Hym::Vertex>& vertices)
 {
 	for (unsigned int i = 0; i < p_assMesh->mNumVertices; i++)
 	{
@@ -43,13 +43,16 @@ Hym::u32 createVertices(aiMesh* p_assMesh, const aiMatrix4x4& trans, std::vector
 
 		vertices.push_back(v);
 	}
-
+	// Align for building BLAS
 	auto alignment = Hym::Dev->GetAdapterInfo().RayTracing.VertexBufferAlignment;
-	auto alignedCount = Diligent::AlignUp(p_assMesh->mNumVertices * unsigned int(sizeof(Hym::Vertex)), alignment) / sizeof(Hym::Vertex);
-	return alignedCount;
+	auto toAdd = Diligent::AlignUp(p_assMesh->mNumVertices * unsigned int(sizeof(Hym::Vertex)), alignment) / sizeof(Hym::Vertex) - p_assMesh->mNumVertices;
+	for (int i = 0; i < toAdd; i++)
+	{
+		vertices.push_back({});
+	}
 }
 
-Hym::u32 createIndices(aiMesh* p_assMesh, std::vector<Hym::u32>& indices)
+void createIndices(aiMesh* p_assMesh, std::vector<Hym::u32>& indices)
 {
 	unsigned int count = 0;
 	for (unsigned int i = 0; i < p_assMesh->mNumFaces; i++)
@@ -62,10 +65,13 @@ Hym::u32 createIndices(aiMesh* p_assMesh, std::vector<Hym::u32>& indices)
 			count++;
 		}
 	}
-
+	// Align for building BLAS
 	auto alignment = Hym::Dev->GetAdapterInfo().RayTracing.IndexBufferAlignment;
-	auto alignedCount = Diligent::AlignUp(count * unsigned int(sizeof(Hym::u32)), alignment) / sizeof(Hym::u32);
-	return alignedCount;
+	auto toAdd = Diligent::AlignUp(count * unsigned int(sizeof(Hym::u32)), alignment) / sizeof(Hym::u32) - count;
+	for (int i = 0; i < toAdd; i++)
+	{
+		indices.push_back(0);
+	}
 }
 
 Hym::Texture& Hym::ResourceManager::GetTexture(u64 id, TextureType ttype)
@@ -86,6 +92,19 @@ Hym::Texture& Hym::ResourceManager::GetTexture(u64 id, TextureType ttype)
 	}
 }
 
+void Hym::ResourceManager::CreateBLASForScene(const std::string& scene)
+{
+	auto it = aliasMap.find(scene);
+	if (it != aliasMap.end())
+	{
+		auto& vec = it->second;
+		for (auto& comp : vec)
+		{
+			
+		}
+	}
+}
+
 void Hym::ResourceManager::Init()
 {
 	HYM_WARN("TODO: Implement default texture");
@@ -93,33 +112,30 @@ void Hym::ResourceManager::Init()
 	//globalIndexBuffer = StructuredBuffer<u32>("Global Index Buffer", dl::BIND_INDEX_BUFFER | dl::BIND_RAY_TRACING | dl::BIND_SHADER_RESOURCE);
 }
 
-void Hym::ResourceManager::preTransformNode(const aiNode& node, const aiScene& scene, std::vector<Hym::ModelComponent>& models, std::vector<Vertex>& vertices, std::vector<u32>& indices,
-	u32& vertexOffset, u32& indexOffset)
+void Hym::ResourceManager::preTransformNode(const aiNode& node, const aiScene& scene, std::vector<Hym::ModelComponent>& models, std::vector<Vertex>& vertices, std::vector<u32>& indices)
 {
 	for (unsigned int i = 0; i < node.mNumChildren; i++)
 	{
 		aiNode& child = *node.mChildren[i];
 		child.mTransformation = node.mTransformation * child.mTransformation;
-		preTransformNode(child, scene, models,vertices,indices,vertexOffset,indexOffset);
+		preTransformNode(child, scene, models,vertices,indices);
 		for (unsigned int j = 0; j < child.mNumMeshes; j++)
 		{
 			auto* mesh = scene.mMeshes[child.mMeshes[j]];
-			//u32 globalVerticesAt = vertices.size();
-			//u32 globalIndicesAt = indices.size();
-			auto vo = createVertices(mesh, child.mTransformation,vertices);
-			auto io = createIndices(mesh,indices);
+			u64 globalVerticesAt = vertices.size();
+			u64 globalIndicesAt = indices.size();
+			createVertices(mesh, child.mTransformation,vertices);
+			createIndices(mesh,indices);
 			//globalVertexBuffer.Add(ArrayRef<Vertex>::MakeRef(vertices));
 			//globalIndexBuffer.Add(ArrayRef<u32>::MakeRef(indices));
-			auto indexSize = indices.size() - indexOffset;
-			auto verticesSize = vertices.size() - vertexOffset;
+			auto indexSize = indices.size() - globalIndicesAt;
+			auto verticesSize = vertices.size() - globalVerticesAt;
 			auto mat = createMaterial(scene.mMaterials[mesh->mMaterialIndex]);
-			auto mesh_ = createMesh(vertexOffset, indexOffset, indexSize, verticesSize, mesh->mName.C_Str());
+			auto mesh_ = createMesh(globalVerticesAt, globalIndicesAt, indexSize, verticesSize, mesh->mName.C_Str());
 			ModelComponent modelComp;
 			modelComp.mat = mat;
 			modelComp.mesh = mesh_;
 			models.push_back(modelComp);
-			vertexOffset += vo;
-			indexOffset += io;
 		}
 	}
 }
@@ -202,7 +218,7 @@ void Hym::ResourceManager::upload(std::vector<Vertex>& vertices, std::vector<u32
 
 
 
-Hym::Mesh Hym::ResourceManager::createMesh(u32 vAt, u32 iAt, u32 indexSize, u32 verticesSize, const char* name)
+Hym::Mesh Hym::ResourceManager::createMesh(u64 vAt, u64 iAt, u64 indexSize, u64 verticesSize, const char* name)
 {
 	Mesh m;
 	m.numIndices = indexSize;
@@ -212,6 +228,11 @@ Hym::Mesh Hym::ResourceManager::createMesh(u32 vAt, u32 iAt, u32 indexSize, u32 
 	m.name = fmt::format("{}", name);
 	
 	return m;
+}
+
+Diligent::RefCntAutoPtr<Diligent::IBuffer> Hym::ResourceManager::createBLASForAll()
+{
+
 }
 
 
@@ -224,9 +245,7 @@ void Hym::ResourceManager::LoadSceneFile(const std::string& sceneFile, const std
 		std::vector<ModelComponent> models;
 		std::vector<Vertex> vertices;
 		std::vector<u32> indices;
-		u32 voffset = 0;
-		u32 ioffset = 0;
-		preTransformNode(*scene->mRootNode, *scene, models,vertices,indices,voffset,ioffset);
+		preTransformNode(*scene->mRootNode, *scene, models,vertices,indices);
 		upload(vertices, indices);
 		aliasMap[sceneAlias] = std::move(models);
 	}

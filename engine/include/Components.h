@@ -3,16 +3,17 @@
 #include "glm/vec3.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtx/euler_angles.hpp"
+#include "Buffer.h"
 
 namespace Hym
 {
 	struct Mesh
 	{
-		u32 numIndices;
-		u32 numVertices;
-		u32 offsetIndex;
-		u32 offsetVertex;
-		std::string name;
+		u32 numIndices=0;
+		u32 numVertices=0;
+		u32 offsetIndex=0;
+		u32 offsetVertex=0;
+		std::string name="Invalid";
 	};
 
 	struct Material

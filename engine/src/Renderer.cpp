@@ -2,7 +2,7 @@
 #include "Debug.h"
 #include "Components.h"
 #include "Graphics/GraphicsTools/interface/MapHelper.hpp"
-
+#include "BasicMath.hpp"
 
 void Hym::Renderer::Init()
 {

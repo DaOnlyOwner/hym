@@ -25,7 +25,7 @@ namespace Hym
 				scene.AddConcept(c);
 			}
 
-			cam.SetPerspectiveProj(87.f, init.width / (float)init.height, 0.00001f, 100000.f);
+			cam.SetPerspectiveProj(87.f, init.width / (float)init.height, 0.1f, 100000.f);
 			cam.SetEyePos({ 1,0,0 });
 			cam.LookAt({ 0,0,0 });
 			//auto min = Resources::Inst().GetMinScene();
@@ -48,7 +48,7 @@ namespace Hym
 		{
 			if (w < 5 || h < 5) return;
 			SwapChain->Resize(w, h);
-			cam.SetPerspectiveProj(87.f, w / (float)h, 0.00001f, 10000.f);
+			cam.SetPerspectiveProj(87.f, w / (float)h, 0.1f, 10000.f);
 			renderer.Resize();
 		}
 

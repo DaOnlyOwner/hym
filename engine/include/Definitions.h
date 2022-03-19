@@ -32,6 +32,10 @@ namespace Hym
 		{
 			return { .size = vec.size(), .data = vec.data() };
 		}
+		static ArrayRef<T> MakeRef(const std::vector<T>& vec, u64 offset)
+		{
+			return { .size = vec.size() - offset, .data = vec.data() + offset };
+		}
 		static ArrayRef<T> MakeRef(const T* data, u64 size)
 		{
 			return { .size = size, .data = data };
