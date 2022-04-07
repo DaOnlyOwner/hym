@@ -4,6 +4,7 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtx/euler_angles.hpp"
 #include "Buffer.h"
+#include <memory>
 
 namespace Hym
 {
@@ -11,22 +12,29 @@ namespace Hym
 	{
 		u32 numIndices=0;
 		u32 numVertices=0;
-		u32 offsetIndex=0;
-		u32 offsetVertex=0;
-		std::string name="Invalid";
+		u64 offsetIndex=0;
+		u64 offsetVertex=0;
+		u64 idxIntoLinearBuffer = 0;
+		//std::string name="Invalid";
 	};
 
 	struct Material
 	{
-		u64 albedo;
-		u64 normal;
-		u64 metalRough;
-		u64 emissive;
+		u32 albedo;
+		u32 normal;
+		u32 metalRough;
+		u32 emissive;
 	};
 
 	struct ModelComponent{
-		Material mat;
+		u32 matIdx;
 		Mesh mesh;	
+	};
+
+	struct DataComponent
+	{
+		std::string name;
+		u32 objAttrIdx;
 	};
 
 	struct TransformComponent

@@ -2,6 +2,7 @@
 #include <cstdint>
 #include "glm/vec3.hpp"
 #include "glm/vec2.hpp"
+#include "glm/mat4x3.hpp"
 #include "RefCntAutoPtr.hpp"
 #include <vector>
 
@@ -21,6 +22,14 @@ namespace Hym
 		//glm::vec3 tangent;
 		//glm::vec3 bitangent;
 		glm::vec2 uv;
+	};
+
+	struct ObjectAttrs
+	{
+		glm::mat4x3 normalMat;
+		u32 firstIndex;
+		u32 firstVertex;
+		u32 matIdx;
 	};
 
 	template<typename T>

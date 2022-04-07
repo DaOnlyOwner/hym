@@ -27,6 +27,7 @@ namespace Hym
 			dl::BufferData data;
 			data.DataSize = a.size * sizeof(T);
 			data.pData = a.data;
+			dataInRam.assign(a.data, a.data + a.size);
 			Dev->CreateBuffer(desc, &data, &bufferHandle);
 		}
 
@@ -40,6 +41,11 @@ namespace Hym
 			:name(name),bind(bind),capacity(0),size(0)
 		{}
 		
+		dl::IBuffer* operator ->()
+		{
+			return bufferHandle.RawPtr();
+		}
+
 		bool Add(const ArrayRef<T>& a, float growth = 1.f)
 		{
 			bool newBufferHandle = false;
@@ -51,12 +57,32 @@ namespace Hym
 
 			Imm->UpdateBuffer(bufferHandle, size * sizeof(T), a.size * sizeof(T), a.data, dl::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 			size = a.size + size;
+
+			dataInRam.insert(dataInRam.end(), a.data, a.data+a.size);
 			return newBufferHandle;
+		}
+
+		void Update(u64 idx, const T& val)
+		{
+			Imm->UpdateBuffer(bufferHandle, idx * sizeof(T), sizeof(T), &val, dl::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 		}
 
 		dl::IBuffer* GetBuffer()
 		{
 			return bufferHandle.RawPtr();
+		}
+
+		// This should not be used frequently
+		std::pair<u64,u64> Remove(u64 pos)
+		{
+			std::swap(dataInRam.back(), dataInRam.data + pos);
+			dataInRam.pop_back();
+			bufferHandle.Release();
+			dl::BufferData bdata;
+			bdata.DataSize = dataInRam.size() * sizeof(T);
+			bdata.pData = dataInRam.data();
+			Dev->CreateBuffer(getDesc(), bdata, &bufferHandle);
+			return { dataInRam.size(),pos };
 		}
 
 		void Reserve(u64 amount)
@@ -102,11 +128,13 @@ namespace Hym
 				Imm->CopyBuffer(bufferHandle, 0, dl::RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
 					newBuffer, 0, size * sizeof(T), dl::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 			}
+			dataInRam.reserve(newCapacity);
 			bufferHandle = newBuffer;
 		}
 
 	private:
 		RefCntAutoPtr<dl::IBuffer> bufferHandle;
+		std::vector<T> dataInRam;
 		u64 size = 0;
 		u64 capacity = 0;
 		std::string name;
@@ -123,7 +151,7 @@ namespace Hym
 		{
 			dl::BufferDesc bdesc;
 			bdesc.Name = name.c_str();
-			bdesc.Usage = dl::USAGE_DYNAMIC;
+			bdesc.Usage = usage;
 			bdesc.BindFlags = dl::BIND_UNIFORM_BUFFER;
 			bdesc.Size = sizeof(T);
 			bdesc.CPUAccessFlags = usage == dl::USAGE_DYNAMIC ? dl::CPU_ACCESS_WRITE : dl::CPU_ACCESS_NONE;
@@ -134,11 +162,14 @@ namespace Hym
 		{
 			dl::BufferDesc bdesc;
 			bdesc.Name = name.c_str();
-			bdesc.Usage = dl::USAGE_DYNAMIC;
+			bdesc.Usage = usage;
 			bdesc.BindFlags = dl::BIND_UNIFORM_BUFFER;
 			bdesc.Size = sizeof(T);
 			bdesc.CPUAccessFlags = usage == dl::USAGE_DYNAMIC ? dl::CPU_ACCESS_WRITE : dl::CPU_ACCESS_NONE;
-			Dev->CreateBuffer(bdesc, &t, &bufferHandle);
+			dl::BufferData bdata;
+			bdata.pData = &t;
+			bdata.DataSize = sizeof(T);
+			Dev->CreateBuffer(bdesc, &bdata, &bufferHandle);
 		}
 
 		dl::MapHelper<T> Map()

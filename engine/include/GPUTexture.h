@@ -12,5 +12,7 @@ namespace Hym
 	struct Texture
 	{
 		RefCntAutoPtr<dl::ITexture> handle;
+		u64 offset;
+		TextureType textureType;
 	};
 }

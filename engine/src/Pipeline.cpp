@@ -27,13 +27,26 @@ Hym::Pipeline& Hym::Pipeline::SetLayoutElems(const ArrayRef<LayoutElement>& a)
     return *this;
 }
 
-Hym::Pipeline& Hym::Pipeline::SetVS(const char* name, const char* filename)
+Hym::Pipeline& Hym::Pipeline::SetVS(const char* name, const char* filename, const ArrayRef<std::pair<const char*, const char*>>& macros)
 {
     ShaderCreateInfo sci;
     sci.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
-    sci.UseCombinedTextureSamplers = true;
+    //sci.UseCombinedTextureSamplers = true;
     sci.ShaderCompiler = SHADER_COMPILER_DXC;
 
+    ShaderMacroHelper helper;
+
+    for (int i = 0; i < macros.size; i++)
+    {
+        auto& macro = macros.data[i];
+        helper.AddShaderMacro(macro.first, macro.second);
+    }
+
+    helper.Finalize();
+
+    if (macros.size != 0)
+        sci.Macros = helper;
+    
     sci.pShaderSourceStreamFactory = ShaderStream;
     {
         sci.Desc.ShaderType = SHADER_TYPE_VERTEX;
@@ -42,17 +55,32 @@ Hym::Pipeline& Hym::Pipeline::SetVS(const char* name, const char* filename)
         sci.FilePath = filename;
         Dev->CreateShader(sci, &vs);
     }
+
+
     ci.pVS = vs;
     return *this;
 }
 
-Hym::Pipeline& Hym::Pipeline::SetPS(const char* name, const char* filename)
+Hym::Pipeline& Hym::Pipeline::SetPS(const char* name, const char* filename, const ArrayRef<std::pair<const char*, const char*>>& macros)
 {
     ShaderCreateInfo ShaderCI;
     ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
-    ShaderCI.UseCombinedTextureSamplers = true;
+    //ShaderCI.UseCombinedTextureSamplers = true;
     ShaderCI.ShaderCompiler = SHADER_COMPILER_DXC;
 
+    ShaderMacroHelper helper;
+
+    for (int i = 0; i < macros.size; i++)
+    {
+        auto& macro = macros.data[i];
+        helper.AddShaderMacro(macro.first, macro.second);
+    }
+
+    helper.Finalize();
+
+    if (macros.size != 0)
+        ShaderCI.Macros = helper;
+    
     ShaderCI.pShaderSourceStreamFactory = ShaderStream;
     {
         ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
@@ -61,6 +89,8 @@ Hym::Pipeline& Hym::Pipeline::SetPS(const char* name, const char* filename)
         ShaderCI.FilePath = filename;
         Dev->CreateShader(ShaderCI, &ps);
     }
+
+
     ci.pPS = ps;
     return *this;
 }
@@ -75,6 +105,13 @@ Hym::Pipeline& Hym::Pipeline::SetShaderVars(const ArrayRef<ShaderResourceVariabl
 Diligent::GraphicsPipelineStateCreateInfo& Hym::Pipeline::GetPSOCi()
 {
     return ci;
+}
+
+Hym::Pipeline& Hym::Pipeline::SetSamplers(const ArrayRef<ImmutableSamplerDesc>& a)
+{
+    this->ci.PSODesc.ResourceLayout.ImmutableSamplers = a.data;
+    this->ci.PSODesc.ResourceLayout.NumImmutableSamplers = a.size;
+    return *this;
 }
 
 //Hym::Pipeline& Hym::Pipeline::setDefault()
@@ -165,24 +202,25 @@ Hym::ComputePipeline& Hym::ComputePipeline::SetDefault()
 }
 
 
-Hym::ComputePipeline& Hym::ComputePipeline::SetCS(const char* name, const char* filename, const std::vector<std::pair<const char*, const char*>>& macros, const char* entry)
+Hym::ComputePipeline& Hym::ComputePipeline::SetCS(const char* name, const char* filename, const ArrayRef<std::pair<const char*, const char*>>& macros, const char* entry)
 {
     ShaderCreateInfo ShaderCI;
 
     ShaderMacroHelper helper;
     
-    for (auto& macro : macros)
+    for (int i = 0; i<macros.size; i++)
     {
+        auto& macro = macros.data[i];
         helper.AddShaderMacro(macro.first, macro.second);
     }
 
     helper.Finalize();
 
     ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
-    ShaderCI.UseCombinedTextureSamplers = true;
+    //ShaderCI.UseCombinedTextureSamplers = true;
     ShaderCI.ShaderCompiler = SHADER_COMPILER_DXC;
     ShaderCI.HLSLVersion = { 6, 5 };
-    if(!macros.empty())
+    if(macros.size != 0)
         ShaderCI.Macros = helper;
 
     ShaderCI.pShaderSourceStreamFactory = ShaderStream;

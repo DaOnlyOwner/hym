@@ -22,9 +22,11 @@ namespace Hym
 		Pipeline& SetCullmode(CULL_MODE cm);
 		Pipeline& SetDepthTesting(bool enable);
 		Pipeline& SetLayoutElems(const ArrayRef<LayoutElement>& a);
-		Pipeline& SetVS(const char* name, const char* filename);
-		Pipeline& SetPS(const char* name, const char* filename);
+		Pipeline& SetVS(const char* name, const char* filename, const ArrayRef<std::pair<const char*, const char*>>& macros = { .size = 0, .data = 0 });
+		Pipeline& SetPS(const char* name, const char* filename, const ArrayRef<std::pair<const char*, const char*>>& macros = { .size = 0, .data = 0 });
 		Pipeline& SetShaderVars(const ArrayRef<ShaderResourceVariableDesc>& a);
+		Pipeline& SetSamplers(const ArrayRef<ImmutableSamplerDesc>& a);
+
 		GraphicsPipelineStateCreateInfo& GetPSOCi();
 		//Pipeline& setDefault();
 		Pipeline& SetDefaultDeferred();
@@ -48,7 +50,7 @@ namespace Hym
 	public:
 		ComputePipeline();
 		ComputePipeline& SetDefault();
-		ComputePipeline& SetCS(const char* name, const char* filename, const std::vector<std::pair<const char*, const char*>>& macros = {}, const char* entry = "main");
+		ComputePipeline& SetCS(const char* name, const char* filename, const ArrayRef<std::pair<const char*, const char*>>& macros = {.size = 0, .data = 0}, const char* entry = "main");
 		ComputePipeline& SetName(const char* name);
 		ComputePipeline& SetSamplers(const ArrayRef<ImmutableSamplerDesc>& a);
 		void Create();

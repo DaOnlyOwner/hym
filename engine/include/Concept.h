@@ -8,14 +8,17 @@ namespace Hym
 	{
 	public:
 		Concept(entt::registry& reg_, entt::entity me)
-			:reg(&reg_),me(me){}
+			:reg(&reg_),me(me)
+		{
+		}
 		Concept(entt::registry& reg_)
-			:reg(&reg_),me(reg_.create())
+			:Concept(reg_, reg_.create())
 		{
 		}
 		Concept()
 			:Concept(staticReg())
 		{
+
 		}
 
 		template<typename TComp>
@@ -24,8 +27,18 @@ namespace Hym
 			reg->emplace_or_replace<TComp>(me, comp);
 		}
 
+		void SetScale(const glm::vec3& s);
+		void SetRotation(const glm::vec3& r);
+		void SetTranslation(const glm::vec3& trans);
+
 		template<typename TComp>
 		TComp* GetComponent()
+		{
+			return reg->try_get<TComp>(me);
+		}
+
+		template<typename TComp>
+		const TComp* GetComponent() const
 		{
 			return reg->try_get<TComp>(me);
 		}

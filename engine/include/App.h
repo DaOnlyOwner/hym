@@ -12,6 +12,11 @@
 #include "TimeConversion.h"
 #include <string>
 #include "Definitions.h"
+#include <memory>
+
+#include "imgui.h"
+#include "ImGuiImplDiligent.hpp"
+#include "ImGuiUtils.hpp"
 
 namespace Hym
 {
@@ -59,6 +64,7 @@ namespace Hym
 		double GetMousePosY() const;
 
 		GLFWwindow* window;
+		std::unique_ptr<dl::ImGuiImplDiligent> imguiImpl;
 	};
 
 }

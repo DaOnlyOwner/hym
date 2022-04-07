@@ -1,3 +1,5 @@
+#include "traceRaySimple.hlsl"
+#include "sampleIrradianceField.hlsl"
 
 struct PSInput
 {
@@ -13,7 +15,7 @@ struct View
 };
 
 ConstantBuffer<View> view;
-//ConstantBuffer<Sun> sun;
+ConstantBuffer<Sun> sun;
 Texture2D GBuffer_Albedo;
 Texture2D GBuffer_Normal;
 Texture2D GBuffer_Depth;
@@ -29,7 +31,7 @@ float3 ScreenPosToWorldPos(float2 ScreenSpaceUV, float Depth, float4x4 ViewProjI
     return WorldPos.xyz / WorldPos.w;
 }
 
-float4 main(in PSInput PSIn) : SV_TARGET
+float4 main(in PSInput PSIn, float4 pixelPos : SV_POSITION) : SV_TARGET
 {
     uint2 dim;
     GBuffer_Albedo.GetDimensions(dim.x, dim.y);
@@ -44,16 +46,22 @@ float4 main(in PSInput PSIn) : SV_TARGET
     float3 normal = GBuffer_Normal.Load(texelPos).xyz;
     float depth = GBuffer_Depth.Load(texelPos).r;
     float3 pos = ScreenPosToWorldPos(PSIn.Pos.xy / dim,depth,view.VPInv);
-    // Ray r;
-    // r.origin = float4(pos,0.1);
-    // r.direction	= -sun.direction;
-    // bool hit = traceRaySimple(r,tlas);
-    // int shadow = hit ? 1 : 0;
+    Ray r;
+    r.origin = float4(pos,0.1);
+    r.direction	= -sun.direction;
+    bool hit = traceRaySimple(r,tlas);
+    int shadow = hit ? 0 : 1;
     
-    //float3 forward = normalize(pos-view.eyePos);
-    //float3 NdotL = max(dot(normal.xyz,-sun.direction),0.0);
-    //float3 direct = NdotL * sun.color * diffuse.xyz;
-    return float4(albedo*0.000001 + (normal+1) * 0.5 + float3(depth,depth,depth)*0.000001 + pos*0.00001,0);
+    float3 forward = normalize(pos-view.eyePos);
+    float3 NdotL = max(dot(normal.xyz,-sun.direction),0.0);
+    float3 direct = shadow * NdotL * sun.color;
+
+
+    float3 viewVec = normalize(view.eyePos-pos);
+    float3 indirect = sampleIrradianceField(pos,normal,0.98,viewVec);
+    float3 allLight = (direct + indirect) * albedo.xyz;
+
+    return float4(allLight,0);
 }
 
 

@@ -8,7 +8,7 @@
 #include "GlobalState.h"
 #include <thread>
 #include <algorithm>
-
+#include "imgui_impl_glfw.h"
 
 void callback(Diligent::DEBUG_MESSAGE_SEVERITY Severity,
 	const char* Message,
@@ -58,15 +58,28 @@ Hym::App::App(const InitInfo& init)
 int Hym::App::Run()
 {
 	Time delta = 1;
+	ImGui_ImplGlfw_InitForOther(window,false);
 	while (!glfwWindowShouldClose(window))
 	{
 		auto now = std::chrono::high_resolution_clock::now();
 		glfwPollEvents();
+		
+		ImGui_ImplGlfw_NewFrame();
+		imguiImpl->NewFrame(SwapChain->GetDesc().Width, SwapChain->GetDesc().Height, SwapChain->GetDesc().PreTransform);
 		Update(delta);
+		
+		auto* rtv = SwapChain->GetCurrentBackBufferRTV();
+		auto* dsv = SwapChain->GetDepthBufferDSV();
+		Imm->SetRenderTargets(1, &rtv, dsv, dl::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+		imguiImpl->Render(Imm);
+		Imm->Flush();
+		Imm->FinishFrame();
+		SwapChain->Present();
 		glfwSwapBuffers(window);
 		auto then = std::chrono::high_resolution_clock::now();
 		delta = Time(std::chrono::duration_cast<std::chrono::nanoseconds>(then - now).count());
 	}
+	ImGui_ImplGlfw_Shutdown();
 	glfwTerminate();
 	Shutdown();
 	return 0;
@@ -111,7 +124,6 @@ static_assert(false, "OSX is not supported");
 		vkCi.SetValidationLevel(dl::VALIDATION_LEVEL_2);
 		vkCi.NumDeferredContexts = DeferredCtxts.size();
 		
-		
 		//vkCi.NumImmediateContexts = 1;
 		auto* vkFactory = getVk();
 		vkFactory->SetMessageCallback(callback);
@@ -147,6 +159,7 @@ static_assert(false, "OSX is not supported");
 		DeferredCtxts[i-1] = ctxts[i];
 	}
 	//Renderer::Inst().Init(device, imm, swapChain,streamFactory);
+	imguiImpl = std::make_unique<dl::ImGuiImplDiligent>(Dev, SwapChain->GetDesc().ColorBufferFormat, SwapChain->GetDesc().DepthBufferFormat);
 }
 
 double Hym::App::GetMousePosX() const {
