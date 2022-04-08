@@ -37,6 +37,8 @@ float square(float f)
     return f * f;
 }
 
+// This is basically from the supplemental material from the paper 
+// Dynamic Diffuse Global Illumination with Ray-Traced Irradiance Fields
 [numthreads(8,8,1)]
 void main(uint3 groupId : SV_GroupID,
         uint3 threadInGroup : SV_GroupThreadID)
@@ -105,10 +107,10 @@ void main(uint3 groupId : SV_GroupID,
 
     if (result.w > epsilon) {
         result.xyz /= result.w;
-        result.w = 0;//1.0f - uniforms.hysteresis;
+        result.w = 1.0f - uniforms.hysteresis;
     } // if nonzero
 
     float4 old = tex.Load(int3(texelPos,0));
-    tex[texelPos] = lerp(old,result,uniforms.hysteresis);
+    tex[texelPos] = float4(lerp(old,result,result.w));
 
 }

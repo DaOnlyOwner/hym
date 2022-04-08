@@ -5,6 +5,7 @@
 #include <string>
 #include "glm/gtx/quaternion.hpp"
 #include "MapHelper.hpp"
+#include "Debug.h"
 
 #define WEIGHT_FORMAT dl::TEX_FORMAT_RGBA16_FLOAT;
 #define IRRAD_FORMAT dl::TEX_FORMAT_RGBA16_FLOAT;
@@ -28,7 +29,7 @@ void Hym::IrradianceField::Init(int probesX, int probesY, int probesZ, int raysP
 	L.raysPerProbe = raysPerProbe;
 
 	updateValues.depthSharpness = 50.0f;
-	updateValues.hysteresis = 0.0095f;
+	updateValues.hysteresis = 0.95f;
 	auto probeEnd = L.probeStartPosition + glm::vec3((L.probeCounts - 1)) * L.probeStep;
 	auto probeSpan = probeEnd - L.probeStartPosition;
 
@@ -145,11 +146,12 @@ void Hym::IrradianceField::createUpdateIrrProbesPSO(ComputePipeline& p, const ch
 
 	p.CreateSRB();
 	auto srbUpdate = p.GetSRB();
-	srbUpdate->GetVariableByName(SHADER_TYPE_COMPUTE, "rayHitLocations")->Set(rayHitLocations->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
-	srbUpdate->GetVariableByName(SHADER_TYPE_COMPUTE, "rayHitNormals")->Set(rayHitNormals->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
-	srbUpdate->GetVariableByName(SHADER_TYPE_COMPUTE, "rayHitRadiance")->Set(rayHitRadiance->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
-	srbUpdate->GetVariableByName(SHADER_TYPE_COMPUTE, "rayOrigins")->Set(rayOrigins->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+	
 	srbUpdate->GetVariableByName(SHADER_TYPE_COMPUTE, "rayDirections")->Set(rayDirections->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+	srbUpdate->GetVariableByName(SHADER_TYPE_COMPUTE, "rayHitRadiance")->Set(rayHitRadiance->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+	srbUpdate->GetVariableByName(SHADER_TYPE_COMPUTE, "rayHitNormals")->Set(rayHitNormals->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+	srbUpdate->GetVariableByName(SHADER_TYPE_COMPUTE, "rayHitLocations")->Set(rayHitLocations->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+	srbUpdate->GetVariableByName(SHADER_TYPE_COMPUTE, "rayOrigins")->Set(rayOrigins->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
 	srbUpdate->GetVariableByName(SHADER_TYPE_COMPUTE, "uniforms")->Set(updateValuesBuffer.GetBuffer());
 	srbUpdate->GetVariableByName(SHADER_TYPE_COMPUTE, "tex")->Set(psl == "8" ? irradianceTex->GetDefaultView(TEXTURE_VIEW_UNORDERED_ACCESS)
 		: weightTex->GetDefaultView(TEXTURE_VIEW_UNORDERED_ACCESS));
@@ -157,6 +159,7 @@ void Hym::IrradianceField::createUpdateIrrProbesPSO(ComputePipeline& p, const ch
 	std::random_device dev;
 	rd = std::mt19937_64(dev());
 	distr = std::uniform_real_distribution<double>(0., glm::pi<double>() * 2);
+	distrAxis = std::uniform_real_distribution<double>(0., 10000000.);
 }
 
 void Hym::IrradianceField::Draw()
@@ -195,9 +198,9 @@ void Hym::IrradianceField::Draw()
 
 	{
 		auto map = randomOrientationBuffer.Map();
-		auto t1 = distr(rd);
-		auto t2 = distr(rd);
-		auto t3 = distr(rd);
+		auto t1 = distrAxis(rd);
+		auto t2 = distrAxis(rd);
+		auto t3 = distrAxis(rd);
 		glm::vec3 axis(t1, t2, t3);
 		float angle = distr(rd);
 		map->mat = glm::mat3(glm::angleAxis(angle, axis));

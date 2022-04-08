@@ -16,7 +16,7 @@ namespace Hym
 		{
 			res.Init();
 
-			res.LoadSceneFile(RES "/scenes/sponza/sponza.obj","Sponza");
+			res.LoadSceneFile(RES "/scenes/SunTemple/SunTemple.fbx","Sponza");
 			
 			std::vector<std::pair<Concept,std::string>> concepts;
 			for (auto& m : *res.GetSceneModels("Sponza"))
@@ -148,7 +148,7 @@ namespace Hym
 int main()
 {
 	Hym::InitInfo init{};
-	//init.backend = Hym::InitInfo::RenderBackend::D3D12;
+	init.backend = Hym::InitInfo::RenderBackend::D3D12;
 	init.enableDebugLayers = true;
 	Hym::TestApp app(init);
 	return app.Run();

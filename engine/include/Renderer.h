@@ -40,6 +40,7 @@ namespace Hym
 
 		void Draw(Scene& scene, Camera& cam);
 		void Resize(Scene& scene);
+		void DebugShowIrradWeightTex();
 		//void SetSun(const Sun& sun);
 
 	private:

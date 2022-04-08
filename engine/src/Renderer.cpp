@@ -1,8 +1,7 @@
 #include "Renderer.h"
 #include "Debug.h"
 #include "Components.h"
-#include "Graphics/GraphicsTools/interface/MapHelper.hpp"
-#include "BasicMath.hpp"
+#include "imgui.h"
 
 void Hym::Renderer::Init(Scene& scene, int probesX, int probesY, int probesZ, int raysPerProbe)
 {
@@ -138,6 +137,14 @@ void Hym::Renderer::Resize(Scene& scene)
 {
     initRenderTextures();
     initCompositeSRB(scene);
+}
+
+void Hym::Renderer::DebugShowIrradWeightTex()
+{
+    ImGui::Begin("Irradiance Texture");
+    ImGui::Image(irrField.GetIrrTexView(), { (float)irrField.GetIrrTex()->GetDesc().Width,(float)irrField.GetIrrTex()->GetDesc().Height });
+    ImGui::Image(irrField.GetWeightTexView(), { (float)irrField.GetWeightTex()->GetDesc().Width, (float)irrField.GetWeightTex()->GetDesc().Height });
+    ImGui::End();
 }
 
 //void Hym::Renderer::SetSun(const Sun& sun)

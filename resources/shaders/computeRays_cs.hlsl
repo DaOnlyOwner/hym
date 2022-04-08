@@ -35,13 +35,13 @@ void main(uint3 groupId : SV_GroupID,
     if(hit)
     {
         float3 viewVec = normalize(r.origin.xyz-info.wsHitpoint);
-        float3 indirectL = sampleIrradianceField(info.wsHitpoint,info.wsN,0.95,viewVec);
+        float3 indirectL = sampleIrradianceField(info.wsHitpoint,info.wsN,0.85,viewVec);
         Ray shadowRay;
         shadowRay.direction = -sun.direction;
         shadowRay.origin = float4(info.wsHitpoint,0.8);
         bool sHit = traceRaySimple(shadowRay,tlas);
-        int shadow = sHit ? 0 : 1;
-        float3 directL = max(dot(-sun.direction,info.wsN),0.0) * sun.color * shadow;
+        int lit = sHit ? 0 : 1;
+        float3 directL = max(dot(-sun.direction,info.wsN),0.0) * sun.color * lit;
         allLight = (directL + indirectL) * info.color;
     }
 

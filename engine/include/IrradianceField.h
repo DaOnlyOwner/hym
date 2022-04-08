@@ -52,7 +52,9 @@ namespace Hym
 		void Init(int probesX, int probesY, int probesZ, int raysPerProbe, Scene& scene);
 		void Draw();
 		dl::ITextureView* GetIrrTexView() { return irradianceTex->GetDefaultView(dl::TEXTURE_VIEW_SHADER_RESOURCE); }
+		dl::ITexture* GetIrrTex() { return irradianceTex.RawPtr(); }
 		dl::ITextureView* GetWeightTexView() { return weightTex->GetDefaultView(dl::TEXTURE_VIEW_SHADER_RESOURCE); }
+		dl::ITexture* GetWeightTex() { return weightTex.RawPtr(); }
 		dl::IBuffer* GetLightFieldBuffer() { return lightFieldBuffer.GetBuffer(); }
 
 	private:
@@ -68,6 +70,7 @@ namespace Hym
 
 		std::mt19937_64 rd;
 		std::uniform_real_distribution<double> distr;
+		std::uniform_real_distribution<double> distrAxis;
 
 		RefCntAutoPtr<ITexture> weightTex;
 		RefCntAutoPtr<ITexture> irradianceTex;

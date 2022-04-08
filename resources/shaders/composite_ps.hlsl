@@ -58,7 +58,7 @@ float4 main(in PSInput PSIn, float4 pixelPos : SV_POSITION) : SV_TARGET
 
 
     float3 viewVec = normalize(view.eyePos-pos);
-    float3 indirect = sampleIrradianceField(pos,normal,0.98,viewVec);
+    float3 indirect = sampleIrradianceField(pos,normal,1.0,viewVec);
     float3 allLight = (direct + indirect) * albedo.xyz;
 
     return float4(allLight,0);

@@ -5,6 +5,9 @@
 
 ConstantBuffer<LightField> L;
 
+// This is basically from the supplemental material from the paper 
+// Dynamic Diffuse Global Illumination with Ray-Traced Irradiance Fields
+
 /**  Generate a spherical fibonacci point
 
     http://lgdv.cs.fau.de/publications/publication/Pub.2015.tech.IMMD.IMMD9.spheri/
