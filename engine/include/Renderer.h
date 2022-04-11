@@ -24,7 +24,9 @@ namespace Hym
 	{
 		glm::mat4 VPInv;
 		glm::vec3 eyePos;
-		float padding;
+		int showHitLocations;
+		int probeID;
+		int p1, p2, p3;
 	};
 
 
@@ -40,10 +42,28 @@ namespace Hym
 
 		void Draw(Scene& scene, Camera& cam);
 		void Resize(Scene& scene);
-		void DebugShowIrradWeightTex();
+		void DoDebugDrawProbes(bool enable) { debugRenderProbes = enable; }
+		void DoShowHitLocations(bool enable) { showHitLocations = enable; }
+		void SetDebugProbeID(int id) { currentDebugProbeID = id; }
 		//void SetSun(const Sun& sun);
 
 	private:
+
+		struct DebugDrawProbesData
+		{
+			struct Uniforms
+			{
+				int probeID;
+				int sideLength;
+				int debugProbeID, padding3;
+			};
+			Pipeline pso;
+			Mesh mesh;
+			UniformBuffer<Uniforms> uniforms;
+		};
+
+		DebugDrawProbesData debugProbeData;
+
 
 		struct GBuffer
 		{
@@ -79,6 +99,13 @@ namespace Hym
 		void initCompositeSRB(Scene& scene);
 
 		void initRenderTextures();
+
+		bool debugRenderProbes = false;
+		bool showHitLocations = false;
+		int currentDebugProbeID = 0;
+		void debugDrawProbes(Scene& scene, Camera& cam);
+
+		void initDebugDrawProbes(Hym::Scene& scene);
 
 	};
 }

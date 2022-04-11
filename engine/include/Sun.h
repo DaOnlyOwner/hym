@@ -15,7 +15,10 @@ namespace Hym
 		void Set();
 		void RenderShadowMap();
 		dl::IBuffer* GetSunBuffer() { return sunBuffer.GetBuffer(); }
-		
+		static glm::vec3 ToCartesian(const glm::vec2& spherical);
+
+
+
 	private:
 		struct SunDataGPU
 		{

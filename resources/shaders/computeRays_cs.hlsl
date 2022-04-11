@@ -28,27 +28,29 @@ void main(uint3 groupId : SV_GroupID,
     if(texelPos.x >= dim.x || texelPos.y >= dim.y) return;
 
     
-    Ray r = generateRay(texelPos,randomOrientation.mat,L.raysPerProbe);
+    Ray r = generateRay(texelPos,(float3x3)randomOrientation.mat,L.raysPerProbe,L.probeCounts.x * L.probeCounts.y * L.probeCounts.z);
     HitInfo info;
     bool hit = traceRay(r,info,tlas);
     float3 allLight = float3(0,0,0);
+    int lit = 0;
     if(hit)
     {
         float3 viewVec = normalize(r.origin.xyz-info.wsHitpoint);
         float3 indirectL = sampleIrradianceField(info.wsHitpoint,info.wsN,0.85,viewVec);
         Ray shadowRay;
         shadowRay.direction = -sun.direction;
-        shadowRay.origin = float4(info.wsHitpoint,0.8);
+        shadowRay.origin = float4(info.wsHitpoint,0.0 );
         bool sHit = traceRaySimple(shadowRay,tlas);
-        int lit = sHit ? 0 : 1;
+        lit = !sHit;//sHit ? 0 : 1;
         float3 directL = max(dot(-sun.direction,info.wsN),0.0) * sun.color * lit;
         allLight = (directL + indirectL) * info.color;
     }
-
+    //float tw = L.depthProbeSideLength;
+    float d = max(dot(-sun.direction,info.wsN),0);
     rayDirections[texelPos] = float4(r.direction,0);
-    rayHitLocations[texelPos] = hit?float4(info.wsHitpoint,0):float4(1,1,1,1);
+    rayHitLocations[texelPos] = hit?float4(info.wsHitpoint,0):float4(0,0,0,0);
     rayHitRadiance[texelPos] = float4(allLight,0);
-    rayHitNormals[texelPos] = hit?float4(info.wsN,0):float4(1,1,1,1);
+    rayHitNormals[texelPos] = hit?float4(info.wsN,0):float4(0,0,0,0);
     rayOrigins[texelPos] = r.origin;
 }
 

@@ -158,6 +158,18 @@ Hym::Pipeline& Hym::Pipeline::SetDefaultComposite()
     return *this;
 }
 
+Hym::Pipeline& Hym::Pipeline::SetDefaultForward()
+{
+    ci.GraphicsPipeline.NumRenderTargets = 1;
+    ci.GraphicsPipeline.RTVFormats[0] = SwapChain->GetDesc().ColorBufferFormat;
+    ci.GraphicsPipeline.DSVFormat = DEPTH_FORMAT;// SwapChain->GetDesc().DepthBufferFormat;
+    ci.GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    ci.PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE;
+    ci.GraphicsPipeline.RasterizerDesc.CullMode = CULL_MODE_BACK;
+    ci.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
+    return *this;
+}
+
 //Hym::Pipeline& Hym::Pipeline::SetDefaultRenderToTexture(TextureDesc* desc, int count)
 //{
 //    ci.PSODesc.Name = "Default Render To Texture PSO";

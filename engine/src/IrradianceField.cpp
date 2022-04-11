@@ -6,6 +6,7 @@
 #include "glm/gtx/quaternion.hpp"
 #include "MapHelper.hpp"
 #include "Debug.h"
+#include "glm/vec2.hpp"
 
 #define WEIGHT_FORMAT dl::TEX_FORMAT_RGBA16_FLOAT;
 #define IRRAD_FORMAT dl::TEX_FORMAT_RGBA16_FLOAT;
@@ -18,14 +19,14 @@ void Hym::IrradianceField::Init(int probesX, int probesY, int probesZ, int raysP
 	L.probeCounts.y = probesY;
 	L.probeCounts.z = probesZ;
 	L.depthProbeSideLength = 16;
-	L.irradianceProbeSideLength = 8;
+	L.irradianceProbeSideLength = 16;
 	L.normalBias = 0.25f;
 	L.irradianceTextureWidth = (L.irradianceProbeSideLength + 2) /* 1px Border around probe left and right */ * L.probeCounts.x * L.probeCounts.y + 2 /* 1px Border around whole texture left and right*/;
 	L.irradianceTextureHeight = (L.irradianceProbeSideLength + 2) * L.probeCounts.z + 2;
 	L.depthTextureWidth = (L.depthProbeSideLength + 2) * L.probeCounts.x * L.probeCounts.y + 2;
 	L.depthTextureHeight = (L.depthProbeSideLength + 2) * L.probeCounts.z + 2;
-	L.probeStartPosition = minScene;
-	L.probeStep = glm::max((maxScene - minScene) / (glm::vec3(L.probeCounts) - glm::vec3(1)), glm::vec3(1, 1, 1));
+	L.probeStartPosition = minScene + glm::vec3(+1.0,+1.0,+1.0);
+	L.probeStep = (maxScene - minScene - glm::vec3(1)) / (glm::vec3(L.probeCounts) - glm::vec3(1));
 	L.raysPerProbe = raysPerProbe;
 
 	updateValues.depthSharpness = 50.0f;
@@ -121,12 +122,15 @@ void Hym::IrradianceField::Init(int probesX, int probesY, int probesZ, int raysP
 	createPSOBorderOp(copyBorder_WeightPass, weightTex, "Copy Border Weight PSO", SHADER_RES "/borderOperations_cs.hlsl", "16", "mainDuplicateProbeEdges");
 	createPSOBorderOp(onesBorder_WeightPass, weightTex, "Ones To Border Weight PSO", SHADER_RES "/borderOperations_cs.hlsl", "16", "mainWriteOnesToBorder");
 
-	createUpdateIrrProbesPSO(updateIrradianceProbesPass, SHADER_RES "/updateIrradianceProbes_cs.hlsl", "Update Irradiance Probes CS", "Update Irradiance Probes PSO", "8");
-	createUpdateIrrProbesPSO(updateWeightProbesPass, SHADER_RES "/updateIrradianceProbes_cs.hlsl", "Update Weight Probes CS", "Update Weight Probes PSO", "16");
+	auto depthSL = std::to_string(L.depthProbeSideLength);
+	auto irrSL = std::to_string(L.irradianceProbeSideLength);
+
+	createUpdateIrrProbesPSO(updateIrradianceProbesPass, SHADER_RES "/updateIrradianceProbes_cs.hlsl", "Update Irradiance Probes CS", "Update Irradiance Probes PSO", irrSL.c_str(), true);
+	createUpdateIrrProbesPSO(updateWeightProbesPass, SHADER_RES "/updateIrradianceProbes_cs.hlsl", "Update Weight Probes CS", "Update Weight Probes PSO", depthSL.c_str(), false);
 
 }
 
-void Hym::IrradianceField::createUpdateIrrProbesPSO(ComputePipeline& p, const char* filename, const char* name, const char* psoName, const char* probeSideLength)
+void Hym::IrradianceField::createUpdateIrrProbesPSO(ComputePipeline& p, const char* filename, const char* name, const char* psoName, const char* probeSideLength, bool outputIrr)
 {
 	auto rpp = std::to_string(L.raysPerProbe);
 
@@ -136,30 +140,30 @@ void Hym::IrradianceField::createUpdateIrrProbesPSO(ComputePipeline& p, const ch
 	macros.reserve(3);
 	macros.push_back({ "PROBE_SIDE_LENGTH",probeSideLength });
 	macros.push_back({ "RAYS_PER_PROBE", rpp.c_str() });
-	if (psl == "8") // Irradiance texture
+	if (outputIrr) // Irradiance texture
 		macros.push_back({ "OUTPUT_IRRADIANCE","1" }); 
-	p
-		.SetDefault()
-		.SetName(psoName)
-		.SetCS(name, filename, ArrayRef<std::pair<const char*,const char*>>::MakeRef(macros))
-		.Create();
+	
+	p.SetDefault()
+	 .SetName(psoName)
+	 .SetCS(name, filename, ArrayRef<std::pair<const char*,const char*>>::MakeRef(macros))
+	 .Create();
 
 	p.CreateSRB();
 	auto srbUpdate = p.GetSRB();
 	
 	srbUpdate->GetVariableByName(SHADER_TYPE_COMPUTE, "rayDirections")->Set(rayDirections->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
 	srbUpdate->GetVariableByName(SHADER_TYPE_COMPUTE, "rayHitRadiance")->Set(rayHitRadiance->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
-	srbUpdate->GetVariableByName(SHADER_TYPE_COMPUTE, "rayHitNormals")->Set(rayHitNormals->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
-	srbUpdate->GetVariableByName(SHADER_TYPE_COMPUTE, "rayHitLocations")->Set(rayHitLocations->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
-	srbUpdate->GetVariableByName(SHADER_TYPE_COMPUTE, "rayOrigins")->Set(rayOrigins->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
-	srbUpdate->GetVariableByName(SHADER_TYPE_COMPUTE, "uniforms")->Set(updateValuesBuffer.GetBuffer());
-	srbUpdate->GetVariableByName(SHADER_TYPE_COMPUTE, "tex")->Set(psl == "8" ? irradianceTex->GetDefaultView(TEXTURE_VIEW_UNORDERED_ACCESS)
+	srbUpdate->GetVariableByName(SHADER_TYPE_COMPUTE, "tex")->Set(outputIrr ? irradianceTex->GetDefaultView(TEXTURE_VIEW_UNORDERED_ACCESS)
 		: weightTex->GetDefaultView(TEXTURE_VIEW_UNORDERED_ACCESS));
+	srbUpdate->GetVariableByName(SHADER_TYPE_COMPUTE, "rayHitLocations")->Set(rayHitLocations->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+	srbUpdate->GetVariableByName(SHADER_TYPE_COMPUTE, "uniforms")->Set(updateValuesBuffer.GetBuffer());
+	srbUpdate->GetVariableByName(SHADER_TYPE_COMPUTE, "rayOrigins")->Set(rayOrigins->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+	srbUpdate->GetVariableByName(SHADER_TYPE_COMPUTE, "rayHitNormals")->Set(rayHitNormals->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
 
 	std::random_device dev;
 	rd = std::mt19937_64(dev());
 	distr = std::uniform_real_distribution<double>(0., glm::pi<double>() * 2);
-	distrAxis = std::uniform_real_distribution<double>(0., 10000000.);
+	distrAxis = std::uniform_real_distribution<double>(0., 1.0);// 10000000.);
 }
 
 void Hym::IrradianceField::Draw()
@@ -172,7 +176,8 @@ void Hym::IrradianceField::Draw()
 	DispatchComputeAttribs dattrs;
 	dattrs.ThreadGroupCountZ = 1;
 	// https://stackoverflow.com/questions/8412630/how-to-execute-a-piece-of-code-only-once
-	static bool once = [&]() {
+	if(!writeToOnesDone)
+	{
 
 		dattrs.ThreadGroupCountX = tgcXIrr;
 		dattrs.ThreadGroupCountY = tgcYIrr;
@@ -186,8 +191,8 @@ void Hym::IrradianceField::Draw()
 		Imm->CommitShaderResources(onesBorder_WeightPass.GetSRB(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 		Imm->DispatchCompute(dattrs);
 
-		return true;
-	}();
+		writeToOnesDone = true;
+	}
 
 	auto tgcXSurfel = std::ceil(surfelWidth / (float)numThreadsX);
 	auto tgcYSurfel = std::ceil(surfelHeight / (float)numThreadsY);
@@ -198,10 +203,9 @@ void Hym::IrradianceField::Draw()
 
 	{
 		auto map = randomOrientationBuffer.Map();
-		auto t1 = distrAxis(rd);
-		auto t2 = distrAxis(rd);
-		auto t3 = distrAxis(rd);
-		glm::vec3 axis(t1, t2, t3);
+		auto theta = acos(2*distrAxis(rd)-1);
+		auto phi = 2 * glm::pi<double>() * distrAxis(rd);
+		auto axis = Sun::ToCartesian(glm::vec2(theta, phi));
 		float angle = distr(rd);
 		map->mat = glm::mat3(glm::angleAxis(angle, axis));
 	}
@@ -220,7 +224,7 @@ void Hym::IrradianceField::Draw()
 	Imm->DispatchCompute(dattrs);
 
 	dattrs.ThreadGroupCountX = tgcXIrr;
-	dattrs.ThreadGroupCountY = tgcXIrr;
+	dattrs.ThreadGroupCountY = tgcYIrr;
 
 	Imm->SetPipelineState(updateIrradianceProbesPass.GetPSO());
 	Imm->CommitShaderResources(updateIrradianceProbesPass.GetSRB(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
@@ -231,6 +235,83 @@ void Hym::IrradianceField::Draw()
 	Imm->DispatchCompute(dattrs);
 
 }
+
+//void Hym::IrradianceField::DebugDrawProbes()
+//{
+//	struct CubeVertex
+//	{
+//		glm::vec3 position;
+//		glm::vec2 uv;
+//	};
+//	static CubeVertex CubeVerts[] =
+//	{
+//		{glm::vec3(-1,-1,-1), glm::vec2(0,1)},
+//		{glm::vec3(-1,+1,-1), glm::vec2(0,0)},
+//		{glm::vec3(+1,+1,-1), glm::vec2(1,0)},
+//		{glm::vec3(+1,-1,-1), glm::vec2(1,1)},
+//
+//		{glm::vec3(-1,-1,-1), glm::vec2(0,1)},
+//		{glm::vec3(-1,-1,+1), glm::vec2(0,0)},
+//		{glm::vec3(+1,-1,+1), glm::vec2(1,0)},
+//		{glm::vec3(+1,-1,-1), glm::vec2(1,1)},
+//
+//		{glm::vec3(+1,-1,-1), glm::vec2(0,1)},
+//		{glm::vec3(+1,-1,+1), glm::vec2(1,1)},
+//		{glm::vec3(+1,+1,+1), glm::vec2(1,0)},
+//		{glm::vec3(+1,+1,-1), glm::vec2(0,0)},
+//
+//		{glm::vec3(+1,+1,-1), glm::vec2(0,1)},
+//		{glm::vec3(+1,+1,+1), glm::vec2(0,0)},
+//		{glm::vec3(-1,+1,+1), glm::vec2(1,0)},
+//		{glm::vec3(-1,+1,-1), glm::vec2(1,1)},
+//
+//		{glm::vec3(-1,+1,-1), glm::vec2(1,0)},
+//		{glm::vec3(-1,+1,+1), glm::vec2(0,0)},
+//		{glm::vec3(-1,-1,+1), glm::vec2(0,1)},
+//		{glm::vec3(-1,-1,-1), glm::vec2(1,1)},
+//
+//		{glm::vec3(-1,-1,+1), glm::vec2(1,1)},
+//		{glm::vec3(+1,-1,+1), glm::vec2(0,1)},
+//		{glm::vec3(+1,+1,+1), glm::vec2(0,0)},
+//		{glm::vec3(-1,+1,+1), glm::vec2(1,0)}
+//	};
+//	
+//	static RefCntAutoPtr<IBuffer> cubeVertexBuffer;
+//	static Pipeline cubePipeline;
+//
+//	static bool initDebug = [&]()
+//	{
+//		BufferDesc VertBuffDesc;
+//		VertBuffDesc.Name = "Cube vertex buffer";
+//		VertBuffDesc.Usage = USAGE_IMMUTABLE;
+//		VertBuffDesc.BindFlags = BIND_VERTEX_BUFFER;
+//		VertBuffDesc.Size = sizeof(CubeVerts);
+//		BufferData VBData;
+//		VBData.pData = CubeVerts;
+//		VBData.DataSize = sizeof(CubeVerts);
+//		Dev->CreateBuffer(VertBuffDesc, &VBData, &cubeVertexBuffer);
+//		
+//		LayoutElement le[2] =
+//		{
+//			LayoutElement{0, 0, 3, VT_FLOAT32, False},
+//			LayoutElement(1, 0, 2, VT_FLOAT32, False),
+//		};
+//
+//		auto ref = ArrayRef<LayoutElement>::MakeRef(le, _countof(le));
+//
+//		cubePipeline.SetDefaultDeferred()
+//			.SetVS("Irradiance Probe Debug VS", SHADER_RES "irrProbeDebug_vs.hlsl")
+//			.SetPS("Irradiance Probe Debug PS", SHADER_RES "irrProbeDebug_ps.hlsl")
+//			.SetLayoutElems(ref)
+//			.Create();
+//
+//		cubePipeline.CreateSRB();
+//		auto srb = cubePipeline.GetSRB();
+//		
+//		
+//		return true;
+//	}();
+//}
 
 void Hym::IrradianceField::createSurfelBuffer(RefCntAutoPtr<ITexture>& buffer, const char* name)
 {

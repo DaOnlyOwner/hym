@@ -29,7 +29,7 @@ void createVertices(aiMesh* p_assMesh, const aiMatrix4x4& trans, std::vector<Hym
 		aiVector3D assNormal = normalMatrix * p_assMesh->mNormals[i];
 		aiVector3D assTangent = trans * p_assMesh->mTangents[i];
 		aiVector3D assBitangent = trans * p_assMesh->mBitangents[i];
-		glm::vec3 normal{ assNormal.x, assNormal.y, assNormal.z };
+		glm::vec3 normal { assNormal.x, assNormal.y, assNormal.z };
 		glm::vec3 tangent{ assTangent.x, assTangent.y, assTangent.z };
 		glm::vec3 bitangent{ assBitangent.x,assBitangent.y,assBitangent.z };
 
@@ -46,12 +46,13 @@ void createVertices(aiMesh* p_assMesh, const aiMatrix4x4& trans, std::vector<Hym
 		vertices.push_back(v);
 	}
 	// Align for building BLAS
-	auto alignment = Hym::Dev->GetAdapterInfo().RayTracing.VertexBufferAlignment;
+	assert(Hym::Dev->GetAdapterInfo().RayTracing.VertexBufferAlignment == 1); // For now. 
+	/*auto alignment = Hym::Dev->GetAdapterInfo().RayTracing.VertexBufferAlignment;
 	auto toAdd = Diligent::AlignUp(p_assMesh->mNumVertices * unsigned int(sizeof(Hym::Vertex)), alignment) / sizeof(Hym::Vertex) - p_assMesh->mNumVertices;
 	for (int i = 0; i < toAdd; i++)
 	{
 		vertices.push_back({});
-	}
+	}*/
 }
 
 void createIndices(aiMesh* p_assMesh, std::vector<Hym::u32>& indices)
@@ -68,12 +69,13 @@ void createIndices(aiMesh* p_assMesh, std::vector<Hym::u32>& indices)
 		}
 	}
 	// Align for building BLAS
-	auto alignment = Hym::Dev->GetAdapterInfo().RayTracing.IndexBufferAlignment;
+	assert(Hym::Dev->GetAdapterInfo().RayTracing.VertexBufferAlignment == 1); // For now. 
+	/*auto alignment = Hym::Dev->GetAdapterInfo().RayTracing.IndexBufferAlignment;
 	auto toAdd = Diligent::AlignUp(count * unsigned int(sizeof(Hym::u32)), alignment) / sizeof(Hym::u32) - count;
 	for (int i = 0; i < toAdd; i++)
 	{
 		indices.push_back(0);
-	}
+	}*/
 }
 
 Hym::Texture Hym::ResourceManager::GetTexture(u64 id, TextureType ttype)
@@ -101,25 +103,25 @@ void Hym::ResourceManager::Init()
 }
 
 void Hym::ResourceManager::preTransformNode(const aiNode& node, const aiScene& scene, std::vector<Hym::ModelComponent>& models, std::vector<Vertex>& vertices, std::vector<u32>& indices, 
-	std::vector<Material>& materials, std::vector<ObjectAttrs>& attrs)
+	std::vector<Material>& materials)
 {
 	for (unsigned int i = 0; i < node.mNumChildren; i++)
 	{
 		aiNode& child = *node.mChildren[i];
 		child.mTransformation = node.mTransformation * child.mTransformation;
-		preTransformNode(child, scene, models,vertices,indices,materials,attrs);
+		preTransformNode(child, scene, models,vertices,indices,materials);
 		for (unsigned int j = 0; j < child.mNumMeshes; j++)
 		{
 			auto* mesh = scene.mMeshes[child.mMeshes[j]];
-			u64 globalVerticesAt = vertices.size();
-			u64 globalIndicesAt = indices.size();
+			u64 globalVerticesAt = globalVertexBuffer.GetSize() + vertices.size();
+			u64 globalIndicesAt = globalIndexBuffer.GetSize() + indices.size();
 			auto mat = createMaterial(scene.mMaterials[mesh->mMaterialIndex], std::string(mesh->mName.C_Str()), materials);
 			createVertices(mesh, child.mTransformation,vertices, mat);
 			createIndices(mesh,indices);
 			//globalVertexBuffer.Add(ArrayRef<Vertex>::MakeRef(vertices));
 			//globalIndexBuffer.Add(ArrayRef<u32>::MakeRef(indices));
-			auto indexSize = indices.size() - globalIndicesAt;
-			auto verticesSize = vertices.size() - globalVerticesAt;
+			auto indexSize = (globalIndexBuffer.GetSize() + indices.size()) - globalIndicesAt;
+			auto verticesSize = (globalVertexBuffer.GetSize() + vertices.size()) - globalVerticesAt;
 			auto mesh_ = createMesh(globalVerticesAt, globalIndicesAt, indexSize, verticesSize, mesh->mName.C_Str());
 
 			calcMinMax(globalVerticesAt, vertices);
@@ -216,8 +218,16 @@ Hym::Texture loadTextureAssimp(aiMaterial* ai_mat, const std::string& meshName, 
 	aiString path;
 	if (AI_SUCCESS == ai_mat->GetTexture(type, 0, &path))
 	{
-		std::string p =  scenePath + "/" + path.C_Str();
-		return manager.LoadTexture(p,p,ttype);
+		std::filesystem::path p(path.C_Str());
+		if (p.is_absolute())
+		{
+			return manager.LoadTexture(p.string(), p.string(), ttype);
+		}
+		else
+		{
+			std::string p = scenePath + "/" + path.C_Str();
+			return manager.LoadTexture(p, p, ttype);
+		}
 	}
 	else
 	{
@@ -241,7 +251,7 @@ Hym::u32 Hym::ResourceManager::createMaterial(aiMaterial* ai_mat, const std::str
 		}
 		else
 		{
-			offset = std::numeric_limits<u32>::max();
+			offset = std::numeric_limits<u32>::max()-1;
 			return false;
 		}
 	};
@@ -255,26 +265,29 @@ Hym::u32 Hym::ResourceManager::createMaterial(aiMaterial* ai_mat, const std::str
 	else return std::numeric_limits<u32>::max();
 }
 
-bool Hym::ResourceManager::upload(const std::vector<Vertex>& vertices, const std::vector<u32>& indices, const std::vector<Material>& materials, const std::vector<ObjectAttrs>& objAttrs)
+//#include "Debug.h"
+
+bool Hym::ResourceManager::upload(const std::vector<Vertex>& vertices, const std::vector<u32>& indices, const std::vector<Material>& materials)
 {
 	auto vref = ArrayRef<Vertex>::MakeRef(vertices);
 	auto iref = ArrayRef<u32>::MakeRef(indices);
 	auto matref = ArrayRef<Material>::MakeRef(materials);
-	auto attrref = ArrayRef<ObjectAttrs>::MakeRef(objAttrs);
 	bool rebuild = false;
 	if (!globalVertexBuffer.GetBuffer() && !globalIndexBuffer.GetBuffer())
 	{
 		globalVertexBuffer = StructuredBuffer<Vertex>("Global Vertex Buffer", vref, dl::BIND_VERTEX_BUFFER | dl::BIND_RAY_TRACING | dl::BIND_SHADER_RESOURCE);
 		globalIndexBuffer = StructuredBuffer<u32>("Global Index Buffer", iref,
 			dl::BIND_INDEX_BUFFER | dl::BIND_RAY_TRACING | dl::BIND_SHADER_RESOURCE);
-		globalMaterialBuffer = StructuredBuffer<Material>("Global Material Indices", matref, dl::BIND_SHADER_RESOURCE);
+		if(!materials.empty())
+			globalMaterialBuffer = StructuredBuffer<Material>("Global Material Indices", matref, dl::BIND_SHADER_RESOURCE);
 	}
 
 	else
 	{
-		rebuild = rebuild || globalVertexBuffer.Add(vref);
-		rebuild = rebuild || globalIndexBuffer.Add(iref);
-		rebuild = rebuild || globalMaterialBuffer.Add(matref);
+		rebuild = globalVertexBuffer.Add(vref);
+		rebuild = globalIndexBuffer.Add(iref) || rebuild;
+		if(!materials.empty())
+			rebuild = globalMaterialBuffer.Add(matref) || rebuild;
 	}
 
 	return rebuild;
@@ -384,6 +397,8 @@ std::vector<Hym::dl::IDeviceObject*> Hym::ResourceManager::createViews(std::vect
 
 void Hym::ResourceManager::LoadSceneFile(const std::string& sceneFile, const std::string& sceneAlias)
 {
+	if (aliasMap.contains(sceneAlias))
+		return; // Already loaded.
 	Assimp::Importer imp;
 
 	currSceneFileDir = std::filesystem::path(sceneFile).parent_path();
@@ -395,8 +410,8 @@ void Hym::ResourceManager::LoadSceneFile(const std::string& sceneFile, const std
 		std::vector<u32> indices;
 		std::vector<Material> materials;
 		std::vector<ObjectAttrs> attrs;
-		preTransformNode(*scene->mRootNode, *scene, models,vertices,indices,materials,attrs);
-		upload(vertices, indices, materials,attrs);
+		preTransformNode(*scene->mRootNode, *scene, models,vertices,indices,materials);
+		upload(vertices, indices, materials);
 		createBLAS(models);
 		aliasMap[sceneAlias] = std::move(models);
 		//createIdxIntoLinearBuffer(models);

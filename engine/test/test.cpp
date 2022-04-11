@@ -16,7 +16,7 @@ namespace Hym
 		{
 			res.Init();
 
-			res.LoadSceneFile(RES "/scenes/SunTemple/SunTemple.fbx","Sponza");
+			res.LoadSceneFile(RES "/scenes/sponza/sponza.obj","Sponza");
 			
 			std::vector<std::pair<Concept,std::string>> concepts;
 			for (auto& m : *res.GetSceneModels("Sponza"))
@@ -30,8 +30,8 @@ namespace Hym
 			scene.AddConcepts(ref);
 
 			cam.SetPerspectiveProj(87.f, init.width / (float)init.height, 0.1f, 100000.f);
-			cam.SetEyePos({ 1,0,0 });
-			cam.LookAt({ 0,0,0 });
+			cam.SetEyePos({ 1,3,0 });
+			cam.LookAt({ 1,1,1 });
 			//auto min = Resources::Inst().GetMinScene();
 			//auto max = Resources::Inst().GetMaxScene();
 			//Renderer::Inst().InitTLAS();
@@ -40,6 +40,21 @@ namespace Hym
 			//s.color = glm::vec3(1, 1, 1);
 			//Renderer::Inst().SetSun(s);
 			renderer.Init(scene, probesXYZ[0], probesXYZ[1], probesXYZ[2], raysPerProbe);
+
+			/*auto isNear = [](glm::vec3 a, glm::vec3 b, float rad)
+			{
+				auto le = glm::length(a - b);
+				return le < rad;
+			};
+
+			for (int i = 0; i < res.GetVertexBuffer().GetSize(); i++)
+			{
+				auto& v = res.GetVertexBuffer()[i];
+				if (isNear(v.normal, glm::vec3(0, 0, 0),0.01))
+				{
+					DebugBreak();
+				}
+			}*/
 		}
 
 		virtual void Update(Time time) override
@@ -64,6 +79,7 @@ namespace Hym
 			{
 				renderer = Renderer();
 				renderer.Init(scene, probesXYZ[0], probesXYZ[1], probesXYZ[2], raysPerProbe);
+				HYM_INFO("Reloaded renderer");
 			}
 			
 			ImGui::End();
@@ -74,8 +90,25 @@ namespace Hym
 			{
 				renderer = Renderer();
 				renderer.Init(scene, probesXYZ[0], probesXYZ[1], probesXYZ[2],raysPerProbe);
+				HYM_INFO("Reloaded renderer");
 			}
 			ImGui::End();
+			
+			ImGui::Begin("Debug");
+			ImGui::Checkbox("Render Debug Probes", &rdp);
+			ImGui::Checkbox("Show Ray Hitlocations", &shl);
+			ImGui::DragInt("Debug Probe ID", &probeID[0], 1.0f, 0, probesXYZ[0]*probesXYZ[1]*probesXYZ[2]);
+			int probeID1d = probeID[0];
+			//ImGui::DragInt("Debug Probe Y", &probeID[1], 1.0f, 0, probesXYZ[1]);
+			//ImGui::DragInt("Debug Probe Z", &probeID[2], 1.0f, 0, probesXYZ[2]);
+
+			//int probeID1d = (probeID[2] * probesXYZ[0] * probesXYZ[1]) + (probeID[1] * probesXYZ[0]) + probeID[0];
+
+			renderer.DoDebugDrawProbes(rdp);
+			renderer.DoShowHitLocations(shl);
+			renderer.SetDebugProbeID(probeID1d);
+			ImGui::End();
+
 
 		}
 
@@ -139,8 +172,11 @@ namespace Hym
 		static constexpr float SPEED = 5;
 		static constexpr float ROTATION_SPEED = 5;
 		float oldX = 0, oldY = 0;
-		int probesXYZ[3] = {32,4,32};
+		int probesXYZ[3] = {16,16,16};
 		int raysPerProbe = 64;
+		bool rdp = false;
+		bool shl = false;
+		int probeID[3] = { 0,0,0 };
 	};
 }
 
@@ -148,7 +184,7 @@ namespace Hym
 int main()
 {
 	Hym::InitInfo init{};
-	init.backend = Hym::InitInfo::RenderBackend::D3D12;
+	//init.backend = Hym::InitInfo::RenderBackend::D3D12;
 	init.enableDebugLayers = true;
 	Hym::TestApp app(init);
 	return app.Run();

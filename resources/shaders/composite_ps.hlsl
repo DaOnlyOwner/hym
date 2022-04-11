@@ -11,7 +11,9 @@ struct View
 {
     float4x4 VPInv;
     float3 eyePos;
-    float padding;
+    int showHitLocations;
+    int probeID;
+    int p2,p3,p4;
 };
 
 ConstantBuffer<View> view;
@@ -19,6 +21,16 @@ ConstantBuffer<Sun> sun;
 Texture2D GBuffer_Albedo;
 Texture2D GBuffer_Normal;
 Texture2D GBuffer_Depth;
+
+Texture2D rayTest;
+Texture2D rayHitLocations;
+
+
+bool isNear(float3 v0, float3 v1, float rad)
+{
+    float le = length(v0-v1);
+    return le < rad;
+}
 
 // https://github.com/DiligentGraphics/DiligentSamples/blob/master/Tutorials/Tutorial22_HybridRendering/assets/Utils.fxh
 float3 ScreenPosToWorldPos(float2 ScreenSpaceUV, float Depth, float4x4 ViewProjInv)
@@ -31,7 +43,7 @@ float3 ScreenPosToWorldPos(float2 ScreenSpaceUV, float Depth, float4x4 ViewProjI
     return WorldPos.xyz / WorldPos.w;
 }
 
-float4 main(in PSInput PSIn, float4 pixelPos : SV_POSITION) : SV_TARGET
+float4 main(in PSInput PSIn) : SV_TARGET
 {
     uint2 dim;
     GBuffer_Albedo.GetDimensions(dim.x, dim.y);
@@ -50,17 +62,42 @@ float4 main(in PSInput PSIn, float4 pixelPos : SV_POSITION) : SV_TARGET
     r.origin = float4(pos,0.1);
     r.direction	= -sun.direction;
     bool hit = traceRaySimple(r,tlas);
-    int shadow = hit ? 0 : 1;
-    
-    float3 forward = normalize(pos-view.eyePos);
-    float3 NdotL = max(dot(normal.xyz,-sun.direction),0.0);
-    float3 direct = shadow * NdotL * sun.color;
+    int lit = hit ? 0 : 1;
 
+    float3 NdotL = max(dot(normal.xyz,-sun.direction),0.0);
+    float3 direct = NdotL * sun.color * lit;
 
     float3 viewVec = normalize(view.eyePos-pos);
     float3 indirect = sampleIrradianceField(pos,normal,1.0,viewVec);
-    float3 allLight = (direct + indirect) * albedo.xyz;
-
+    
+    uint w,h;
+    rayHitLocations.GetDimensions(w,h);
+    //float3 dummy = (rayHitLocations.Load(int3(0,0,0)) + rayTest.Load(int3(0,0,0))) * 0.00001;
+    float3 allLight = (direct + indirect) * albedo.xyz;// + dummy;
+    bool quit = false;
+    if(view.showHitLocations)
+    {
+        for(int ray = 0; ray<w && !quit; ray++)
+        {
+            int3 loc = int3(ray,view.probeID,0);
+            float3 hitl = rayHitLocations.Load(loc).xyz;
+            // if(isNear(pos,orig,0.05))
+            // {
+            //     allLight = float3(0,1,0);
+            // }
+            if(isNear(pos,hitl.xyz,0.05))
+            {
+                float3 col = (rayTest.Load(loc).xyz);
+                if(length(col) < 0.995)
+                {
+                    col = float3(1,0,1);
+                }
+                allLight = (col+1)*0.5;
+                quit=true;
+                break;
+            }
+        }
+    }
     return float4(allLight,0);
 }
 

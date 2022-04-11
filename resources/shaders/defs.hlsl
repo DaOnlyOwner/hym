@@ -25,14 +25,15 @@ struct LightField
     float padding1,padding2,padding3;
 };
 
+// I have to declare as floats and not float3 because float3 is aligned to a float4 thus adding 1 padding which the Host Vertex definition doesn't reflect.
 struct Vertex
 {
-    float3 pos;
-    float padding;
-    float3 normal;
-    float padding2;
-    float2 uv;
-    float padding3,padding4;
+    float posX,posY,posZ;
+    //float padding;
+    float normalX,normalY,normalZ;
+    //float padding2;
+    float uvX,uvY;
+    //float padding3,padding4;
 };
 
 struct Sun
@@ -45,15 +46,16 @@ struct Sun
 
 struct RandomOrientation
 {
-    float3x3 mat;
+    float4x4 mat;
 };
 
 struct ObjectAttrs
 {
-    float4x3 normalMat;
+    float4x4 normalMat;
     uint FirstIndex;
     uint FirstVertex;
     uint MaterialId;
+    uint padding;
 };
 
 struct Material

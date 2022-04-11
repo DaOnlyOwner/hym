@@ -35,20 +35,24 @@ Hym::Concept Hym::Scene::AddConcept(const Concept& c, const std::string& name)
 	DataComponent data;
 	addName(data, name, out.GetID());
 
-	addInstanceIdx(data);
-	out.AddComponent<DataComponent>(data);
 	auto tc = out.GetComponent<TransformComponent>();
 	auto mc = out.GetComponent<ModelComponent>();
 	if (tc && mc)
 	{
+		addInstanceIdx(data);
 		ObjectAttrs attr[1];
+		auto [modelM, normalM] = tc->GetModel_Normal();
+		attr[0].normalMat = glm::transpose(normalM);
 		attr[0].firstIndex = mc->mesh.offsetIndex;
 		attr[0].firstVertex = mc->mesh.offsetVertex;
 		attr[0].matIdx = mc->matIdx;
 		auto ref = ArrayRef<ObjectAttrs>::MakeRef(attr, _countof(attr));
-		instanceAttrs.Add(ref, 1.5f);
+		instanceAttrs.Add(ref, 1.5f); // TODO: If remove <- here update instead of Add...
 	}
-	rebuildTLAS();
+	out.AddComponent<DataComponent>(data);
+	
+	if(tc && mc) 
+		rebuildTLAS();
 	return out;
 }
 
@@ -65,20 +69,23 @@ std::vector<Hym::Concept> Hym::Scene::AddConcepts(const ArrayRef<std::pair<Conce
 		DataComponent data;
 		
 		addName(data, name, new_c.GetID());
-		addInstanceIdx(data);
 
-		new_c.AddComponent<DataComponent>(data);
 
 		auto tc = new_c.GetComponent<TransformComponent>();
 		auto mc = new_c.GetComponent<ModelComponent>();
 		if (tc && mc)
 		{
+			auto [modelM, normalM] = tc->GetModel_Normal();
+
+			addInstanceIdx(data);
 			ObjectAttrs attr;
+			attr.normalMat = glm::transpose(normalM);
 			attr.firstIndex = mc->mesh.offsetIndex;
 			attr.firstVertex = mc->mesh.offsetVertex;
 			attr.matIdx = mc->matIdx;
 			attrs.push_back(attr);
 		}
+		new_c.AddComponent<DataComponent>(data);
 		out.push_back(new_c);
 		activeConcepts++;
 	}
@@ -86,8 +93,9 @@ std::vector<Hym::Concept> Hym::Scene::AddConcepts(const ArrayRef<std::pair<Conce
 	{
 		auto ref = ArrayRef<ObjectAttrs>::MakeRef(attrs);
 		instanceAttrs.Add(ref, 1.5f);
+		auto i = sizeof(ObjectAttrs);
+		rebuildTLAS();
 	}
-	rebuildTLAS();
 	return out;
 }
 
@@ -255,7 +263,7 @@ void Hym::Scene::createTLASScratchBuffer()
 void Hym::Scene::addInstanceIdx(DataComponent& data)
 {
 	if (reusableIndices.empty())
-		data.objAttrIdx = instanceAttrs.GetSize();
+		data.objAttrIdx = currInstanceIdx++;
 	else
 	{
 		data.objAttrIdx = reusableIndices.back();

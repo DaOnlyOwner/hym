@@ -45,11 +45,10 @@ namespace Hym
 		void calcMinMax(const Hym::u64& globalVerticesAt, std::vector<Hym::Vertex>& vertices);
 		
 	private:
-		void preTransformNode(const aiNode& node, const aiScene& scene, std::vector<ModelComponent>& models, std::vector<Vertex>& vertices, std::vector<u32>& indices, std::vector<Material>& materials,
-			std::vector<ObjectAttrs>& attrs);
+		void preTransformNode(const aiNode& node, const aiScene& scene, std::vector<ModelComponent>& models, std::vector<Vertex>& vertices, std::vector<u32>& indices, std::vector<Material>& materials);
 		Mesh createMesh(u64 vAt, u64 iAt, u64 indexSize, u64 verticesSize, const char* name);
 		u32 createMaterial(aiMaterial* ai_mat, const std::string& meshName, std::vector<Material>& materials);
-		bool upload(const std::vector<Vertex>& vertices, const std::vector<u32>& indices, const std::vector<Material>& materials, const std::vector<ObjectAttrs>& attrs);
+		bool upload(const std::vector<Vertex>& vertices, const std::vector<u32>& indices, const std::vector<Material>& materials);
 		void createBLAS(std::vector<ModelComponent>& models);
 		std::vector<dl::IDeviceObject*> createViews(std::vector<RefCntAutoPtr<dl::ITexture>>& texs);
 		//void createIdxIntoLinearBuffer(std::vector<ModelComponent>& models);

@@ -65,6 +65,12 @@ namespace Hym
 		void Update(u64 idx, const T& val)
 		{
 			Imm->UpdateBuffer(bufferHandle, idx * sizeof(T), sizeof(T), &val, dl::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+			dataInRam[idx] = val;
+		}
+
+		const T& operator[](u64 idx)
+		{
+			return dataInRam[idx];
 		}
 
 		dl::IBuffer* GetBuffer()

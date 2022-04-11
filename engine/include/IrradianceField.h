@@ -42,8 +42,7 @@ namespace Hym
 
 	struct RandomOrientation
 	{
-		glm::mat3 mat;
-		glm::vec3 padding;
+		glm::mat4 mat;
 	};
 
 	class IrradianceField
@@ -51,11 +50,18 @@ namespace Hym
 	public:
 		void Init(int probesX, int probesY, int probesZ, int raysPerProbe, Scene& scene);
 		void Draw();
+		//void DebugDrawProbes();
+
 		dl::ITextureView* GetIrrTexView() { return irradianceTex->GetDefaultView(dl::TEXTURE_VIEW_SHADER_RESOURCE); }
 		dl::ITexture* GetIrrTex() { return irradianceTex.RawPtr(); }
 		dl::ITextureView* GetWeightTexView() { return weightTex->GetDefaultView(dl::TEXTURE_VIEW_SHADER_RESOURCE); }
+		dl::ITextureView* GetRayHitLocationsView() { return rayHitLocations->GetDefaultView(dl::TEXTURE_VIEW_SHADER_RESOURCE); }
+		dl::ITextureView* GetRayHitRadianceView() { return rayHitRadiance->GetDefaultView(dl::TEXTURE_VIEW_SHADER_RESOURCE); }
+		dl::ITextureView* GetRayOriginsView() { return rayOrigins->GetDefaultView(dl::TEXTURE_VIEW_SHADER_RESOURCE); }
+		dl::ITextureView* GetRayHitNormalsView() { return rayHitNormals->GetDefaultView(dl::TEXTURE_VIEW_SHADER_RESOURCE); }
 		dl::ITexture* GetWeightTex() { return weightTex.RawPtr(); }
 		dl::IBuffer* GetLightFieldBuffer() { return lightFieldBuffer.GetBuffer(); }
+		const LightField& GetLightField() { return L; }
 
 	private:
 		glm::vec3 pos;
@@ -67,6 +73,8 @@ namespace Hym
 		static constexpr int probeLengthIrradiance = 8;
 		static constexpr int numThreadsX = 8;
 		static constexpr int numThreadsY = 8;
+		
+		bool writeToOnesDone = false;
 
 		std::mt19937_64 rd;
 		std::uniform_real_distribution<double> distr;
@@ -97,7 +105,7 @@ namespace Hym
 
 		void createSurfelBuffer(RefCntAutoPtr<ITexture>& buffer, const char* name);
 		void createPSOBorderOp(ComputePipeline& p, ITexture* tex, const char* name, const char* filename, const char* probeSideLength, const char* entry);
-		void createUpdateIrrProbesPSO(ComputePipeline& p, const char* filename, const char* name, const char* psoName, const char* probeSideLength);
+		void createUpdateIrrProbesPSO(ComputePipeline& p, const char* filename, const char* name, const char* psoName, const char* probeSideLength, bool outputIrr);
 
 
 	};

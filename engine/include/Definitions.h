@@ -2,7 +2,7 @@
 #include <cstdint>
 #include "glm/vec3.hpp"
 #include "glm/vec2.hpp"
-#include "glm/mat4x3.hpp"
+#include "glm/mat4x4.hpp"
 #include "RefCntAutoPtr.hpp"
 #include <vector>
 
@@ -26,10 +26,11 @@ namespace Hym
 
 	struct ObjectAttrs
 	{
-		glm::mat4x3 normalMat;
+		glm::mat4 normalMat;
 		u32 firstIndex;
 		u32 firstVertex;
 		u32 matIdx;
+		u32 padding;
 	};
 
 	template<typename T>

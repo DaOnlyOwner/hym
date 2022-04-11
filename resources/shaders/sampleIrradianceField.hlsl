@@ -10,6 +10,9 @@ SamplerState irradianceTex_sampler;
 Texture2D weightTex;
 SamplerState weightTex_sampler;
 
+// This is basically from the supplemental material from the paper 
+// Dynamic Diffuse Global Illumination with Ray-Traced Irradiance Fields
+
 float square(float f)
 {
     return f * f;
@@ -121,8 +124,7 @@ float3 sampleIrradianceField(float3 wsPosition, float3 wsN, float energyPreserva
 
             // The small offset at the end reduces the "going to zero" impact
             // where this is really close to exactly opposite
-            float f = (max(0.0001, (dot(trueDirectionToProbe, wsN) + 1.0) * 0.5));
-            weight *= f*f + 0.2;
+            weight *= square(max(0.0001, (dot(trueDirectionToProbe, wsN) + 1.0) * 0.5)) + 0.2;
         }
         
         // Moment visibility test
@@ -141,8 +143,8 @@ float3 sampleIrradianceField(float3 wsPosition, float3 wsN, float energyPreserva
 
             // http://www.punkuser.net/vsm/vsm_paper.pdf; equation 5
             // Need the max in the denominator because biasing can cause a negative displacement
-            float f = max(distToProbe - mean, 0.0);
-            float chebyshevWeight = variance / (variance + f*f);
+            //float f = max(distToProbe - mean, 0.0);
+            float chebyshevWeight = variance / (variance + square(max(distToProbe - mean, 0.0)));
                 
             // Increase contrast in the weight 
             chebyshevWeight = max(pow(chebyshevWeight,3), 0.0);

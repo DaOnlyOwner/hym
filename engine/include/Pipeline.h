@@ -31,11 +31,13 @@ namespace Hym
 		//Pipeline& setDefault();
 		Pipeline& SetDefaultDeferred();
 		Pipeline& SetDefaultComposite();
+		Pipeline& SetDefaultForward();
 		//Pipeline& SetDefaultRenderToTexture(TextureDesc* desc, int count);
 		Pipeline& SetName(const char* name);
 		void Create();
 		void CreateSRB();
-		IPipelineState& GetPSO() { return *pso; }
+		IPipelineState* GetPSO() { return pso; }
+		IShaderResourceBinding* GetSRB() { return srb.RawPtr(); }
 	private:
 		RefCntAutoPtr<IPipelineState> pso;
 		RefCntAutoPtr<IShaderResourceBinding> srb;

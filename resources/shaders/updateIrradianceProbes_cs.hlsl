@@ -53,7 +53,7 @@ void main(uint3 groupId : SV_GroupID,
     uint2 dim;
     tex.GetDimensions(dim.x,dim.y);
 
-    if(texelPos.x >= dim.x || texelPos.y >= dim.y) return;
+    if(texelPos.x >= dim.x -1 || texelPos.y >= dim.y -1 || texelPos.x < 1 || texelPos.y < 1) return;
     int relativeProbeID = probeID(texelPos.xy, dim.x);
 
     if (relativeProbeID == -1) {
@@ -61,19 +61,19 @@ void main(uint3 groupId : SV_GroupID,
         return;
     }
 
+    float3 texelDirection = octDecode(normalizedOctCoord(texelPos));
     const float energyConservation = 0.95;
 
     // For each ray
 	for (int r = 0; r < RAYS_PER_PROBE; ++r) {
-		int2 C = int2(r, relativeProbeID);
+		int3 C = int3(r, relativeProbeID,0);
+		float3 rayDirection    = rayDirections.Load(C).xyz;
+        float3  rayHitRadiance_  = rayHitRadiance.Load(C).xyz * energyConservation; // Today energy is conserved in sampleIrradiance field. Is it needed here?
+		float3  rayHitLocation  = rayHitLocations.Load(C).xyz;
 
-		float3 rayDirection    = rayDirections.Load(int3(C,0)).xyz;
-        float3  rayHitRadiance_  = rayHitRadiance.Load(int3(C,0)).xyz * energyConservation;
-		float3  rayHitLocation  = rayHitLocations.Load(int3(C,0)).xyz;
-
-        float3 probeLocation = rayOrigins.Load(int3(C,0)).xyz;
+        float3 probeLocation = rayOrigins.Load(C).xyz;
         // Will be zero on a miss
-		float3 rayHitNormal    = rayHitNormals.Load(int3(C, 0)).xyz;
+		float3 rayHitNormal    = rayHitNormals.Load(C).xyz;
 
         rayHitLocation += rayHitNormal * 0.01f;
 
@@ -84,7 +84,6 @@ void main(uint3 groupId : SV_GroupID,
             rayProbeDistance = uniforms.maxDistance;
         }
 
-        float3 texelDirection = octDecode(normalizedOctCoord(texelPos));
 
 #if OUTPUT_IRRADIANCE
         float weight = max(0.0, dot(texelDirection, rayDirection));
@@ -107,10 +106,9 @@ void main(uint3 groupId : SV_GroupID,
 
     if (result.w > epsilon) {
         result.xyz /= result.w;
-        result.w = 1.0f - uniforms.hysteresis;
+        //result.w = 1.0f - uniforms.hysteresis;
     } // if nonzero
 
     float4 old = tex.Load(int3(texelPos,0));
-    tex[texelPos] = float4(lerp(old,result,result.w));
-
+    tex[texelPos] = lerp(old,result,1.0f-uniforms.hysteresis);
 }
