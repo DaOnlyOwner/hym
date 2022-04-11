@@ -28,7 +28,7 @@ void main(uint3 groupId : SV_GroupID,
     if(texelPos.x >= dim.x || texelPos.y >= dim.y) return;
 
     
-    Ray r = generateRay(texelPos,(float3x3)randomOrientation.mat,L.raysPerProbe,L.probeCounts.x * L.probeCounts.y * L.probeCounts.z);
+    Ray r = generateRay(texelPos,(float3x3)randomOrientation.mat,L.raysPerProbe,L.minRayDst);
     HitInfo info;
     bool hit = traceRay(r,info,tlas);
     float3 allLight = float3(0,0,0);
@@ -36,10 +36,10 @@ void main(uint3 groupId : SV_GroupID,
     if(hit)
     {
         float3 viewVec = normalize(r.origin.xyz-info.wsHitpoint);
-        float3 indirectL = sampleIrradianceField(info.wsHitpoint,info.wsN,0.85,viewVec);
+        float3 indirectL = sampleIrradianceField(info.wsHitpoint,info.wsN,L.energyConservation,viewVec);
         Ray shadowRay;
         shadowRay.direction = -sun.direction;
-        shadowRay.origin = float4(info.wsHitpoint,0.0 );
+        shadowRay.origin = float4(info.wsHitpoint,0.00 );
         bool sHit = traceRaySimple(shadowRay,tlas);
         lit = !sHit;//sHit ? 0 : 1;
         float3 directL = max(dot(-sun.direction,info.wsN),0.0) * sun.color * lit;

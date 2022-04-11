@@ -30,15 +30,13 @@ bool traceRay(in Ray ray, out HitInfo info, RaytracingAccelerationStructure tlas
     rdesc.TMin = ray.origin.w;
     rdesc.TMax = 100000000.0; // TODO: Change this to improve performance
 
-    RayQuery<RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_CULL_FRONT_FACING_TRIANGLES> query;
+    RayQuery<RAY_FLAG_CULL_FRONT_FACING_TRIANGLES> query;
     query.TraceRayInline(tlas,RAY_FLAG_NONE,0xFF,rdesc);
 
     query.Proceed();
     bool hit = query.CommittedStatus() == COMMITTED_TRIANGLE_HIT;
     if(!hit) return false;
     uint instId = query.CommittedInstanceID();
-    uint num,stride;
-    attrs.GetDimensions(num,stride);
     ObjectAttrs attr = attrs[instId];
     uint primitive = query.CommittedPrimitiveIndex();
     uint3 index = uint3(
@@ -81,7 +79,7 @@ bool traceRaySimple(in Ray ray, RaytracingAccelerationStructure tlas)
     rdesc.Direction = ray.direction;
     rdesc.TMin = ray.origin.w;
     rdesc.TMax = 10000000000.;
-    RayQuery<RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_CULL_FRONT_FACING_TRIANGLES> query;
+    RayQuery<RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH> query;
     query.TraceRayInline(tlas, RAY_FLAG_NONE,0xFF,rdesc);
     query.Proceed();
     return query.CommittedStatus() == COMMITTED_TRIANGLE_HIT;

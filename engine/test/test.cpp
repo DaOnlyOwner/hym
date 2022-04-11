@@ -71,6 +71,12 @@ namespace Hym
 			ImGui::Begin("Lighting");
 			ImGui::DragFloat("Light direction Theta", &scene.GetSun().Direction.x, 0.55f, 0, 180, "%.04f", 1);
 			ImGui::DragFloat("Light direction Phi", &scene.GetSun().Direction.y, 0.55f, -180, 180, "%.04f", 1);
+			bool isChangeECons = ImGui::DragFloat("Energy Conservation", &econservation,0.01f,0,1,"%.04f");
+			if (isChangeECons) renderer.SetEnergyConservation(econservation);
+			ImGui::DragFloat("Indirect Intensity", &indirectInt, 0.05f, 0, 100);
+			ImGui::DragFloat("Direct Intensity", &directInt, 0.05f, 0, 100);
+			renderer.SetIndirectIntensity(indirectInt);
+			renderer.SetDirectIntensity(directInt);
 			scene.GetSun().Color = glm::vec3(1, 1, 1);
 			ImGui::Separator();
 			ImGui::DragInt3("Probe amounts", probesXYZ);
@@ -107,8 +113,16 @@ namespace Hym
 			renderer.DoDebugDrawProbes(rdp);
 			renderer.DoShowHitLocations(shl);
 			renderer.SetDebugProbeID(probeID1d);
+			ImGui::Separator();
+			bool c = ImGui::DragFloat("Normal Bias", &normalBias, 0.01, 0, 10,"%.06f");
+			bool c1 = ImGui::DragFloat("Cheb Bias", &chebBias, 0.01, 0, 10, "%.06f");
+			bool c2 = ImGui::DragFloat("Depth Sharpness", &sharpness, 1, 0, 200);
+			bool c3 = ImGui::DragFloat("Min Ray Distance", &minRayDst, 0.001, 0, 100, "%.06f");
+			if (c) renderer.SetNormalBias(normalBias);
+			if (c1) renderer.SetChebyshevBias(chebBias);
+			if (c2) renderer.SetDepthSharpness(sharpness);
+			if (c3) renderer.SetRayMinDst(minRayDst);
 			ImGui::End();
-
 
 		}
 
@@ -139,27 +153,6 @@ namespace Hym
 
 			oldX = GetMousePosX();
 			oldY = GetMousePosY();
-
-			/*int sign = 1;
-			if (glfwGetKey(window, GLFW_KEY_R))
-				sign = -1;
-			if (glfwGetKey(window, GLFW_KEY_J))
-			{
-
-				s.direction += glm::vec3(sign * SPEED * deltaTime, 0, 0);
-			}
-
-			if (glfwGetKey(window, GLFW_KEY_K))
-			{
-				s.direction += glm::vec3(0, sign * SPEED * deltaTime, 0);
-			}
-
-			if (glfwGetKey(window, GLFW_KEY_L))
-			{
-				s.direction += glm::vec3(0, 0, sign * SPEED * deltaTime);
-			}*/
-
-
 		}
 
 	private:
@@ -177,6 +170,12 @@ namespace Hym
 		bool rdp = false;
 		bool shl = false;
 		int probeID[3] = { 0,0,0 };
+
+		float sharpness = 50.f, normalBias = 0.25f, chebBias = 0.f, minRayDst = 0.08;
+		float econservation = 0.85;
+		float indirectInt = 0.4f;
+		float directInt = 1;
+
 	};
 }
 

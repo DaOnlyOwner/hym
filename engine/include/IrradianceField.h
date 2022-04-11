@@ -28,7 +28,7 @@ namespace Hym
 		int depthTextureWidth;
 		int depthTextureHeight;
 		float depthProbeSideLength;
-		float padding1, padding2, padding3;
+		float chebBias, minRayDst, energyConservation;
 	};
 
 
@@ -50,6 +50,37 @@ namespace Hym
 	public:
 		void Init(int probesX, int probesY, int probesZ, int raysPerProbe, Scene& scene);
 		void Draw();
+
+		void SetNormalBias(float bias) {
+			L.normalBias = bias;
+			lightFieldBuffer.Update(L);
+		}
+
+		void SetChebyshevBias(float bias)
+		{
+			L.chebBias = bias;
+			lightFieldBuffer.Update(L);
+		}
+
+		void SetDepthSharpness(float sharpness)
+		{
+			updateValues.depthSharpness = sharpness;
+			updateValuesBuffer.Update(updateValues);
+		}
+
+		void SetRayMinDst(float minDst)
+		{
+			L.minRayDst = minDst;
+			lightFieldBuffer.Update(L);
+		}
+
+		void SetEnergyConservation(float con)
+		{
+			L.energyConservation = con;
+			lightFieldBuffer.Update(L);
+		}
+
+
 		//void DebugDrawProbes();
 
 		dl::ITextureView* GetIrrTexView() { return irradianceTex->GetDefaultView(dl::TEXTURE_VIEW_SHADER_RESOURCE); }

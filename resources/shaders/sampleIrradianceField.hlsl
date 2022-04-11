@@ -144,10 +144,10 @@ float3 sampleIrradianceField(float3 wsPosition, float3 wsN, float energyPreserva
             // http://www.punkuser.net/vsm/vsm_paper.pdf; equation 5
             // Need the max in the denominator because biasing can cause a negative displacement
             //float f = max(distToProbe - mean, 0.0);
-            float chebyshevWeight = variance / (variance + square(max(distToProbe - mean, 0.0)));
+            float chebyshevWeight = variance / (variance + square(max(distToProbe - mean, 0.0)));// + L.chebBias;
                 
             // Increase contrast in the weight 
-            chebyshevWeight = max(pow(chebyshevWeight,3), 0.0);
+            chebyshevWeight = max(pow(chebyshevWeight,3), 0.0) + L.chebBias;
 
             weight *= (distToProbe <= mean) ? 1.0 : chebyshevWeight;
         }

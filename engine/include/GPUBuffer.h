@@ -184,6 +184,11 @@ namespace Hym
 		}
 
 		dl::IBuffer* GetBuffer() { return bufferHandle.RawPtr(); }
+		
+		void Update(const T& val)
+		{
+			Imm->UpdateBuffer(bufferHandle, 0, sizeof(T), &val, dl::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+		}
 
 	private:
 		RefCntAutoPtr<dl::IBuffer> bufferHandle;

@@ -124,6 +124,8 @@ void Hym::Renderer::Draw(Scene& scene, Camera& cam)
         view->VPInv = glm::transpose(glm::inverse(cam.GetProjMatrix() * cam.GetViewMatrix()));
         view->showHitLocations = showHitLocations;
         view->probeID = currentDebugProbeID;
+        view->directIntensity = directIntensity;
+        view->indirectIntensity = indirectIntensity;
     }
 
 

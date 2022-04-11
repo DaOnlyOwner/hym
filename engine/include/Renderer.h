@@ -26,7 +26,9 @@ namespace Hym
 		glm::vec3 eyePos;
 		int showHitLocations;
 		int probeID;
-		int p1, p2, p3;
+		float indirectIntensity;
+		float directIntensity;
+		float p2, p3;
 	};
 
 
@@ -45,20 +47,30 @@ namespace Hym
 		void DoDebugDrawProbes(bool enable) { debugRenderProbes = enable; }
 		void DoShowHitLocations(bool enable) { showHitLocations = enable; }
 		void SetDebugProbeID(int id) { currentDebugProbeID = id; }
+		void SetNormalBias(float bias) { irrField.SetNormalBias(bias); }
+		void SetEnergyConservation(float con) { irrField.SetEnergyConservation(con); }
+
+		void SetChebyshevBias(float bias) { irrField.SetChebyshevBias(bias); }
+
+		void SetDepthSharpness(float sharpness) { irrField.SetDepthSharpness(sharpness); }
+		void SetRayMinDst(float dst) { irrField.SetRayMinDst(dst); }
+		void SetIndirectIntensity(float intensity) { indirectIntensity = intensity; }
+		void SetDirectIntensity(float intensity) { directIntensity = intensity; }
 		//void SetSun(const Sun& sun);
 
 	private:
 
 		struct DebugDrawProbesData
 		{
+			Pipeline pso;
+			Mesh mesh;
 			struct Uniforms
 			{
 				int probeID;
 				int sideLength;
-				int debugProbeID, padding3;
+				int debugProbeID;
+				float padding1, padding2;
 			};
-			Pipeline pso;
-			Mesh mesh;
 			UniformBuffer<Uniforms> uniforms;
 		};
 
@@ -71,6 +83,9 @@ namespace Hym
 			RefCntAutoPtr<dl::ITexture> normalBuffer;
 			RefCntAutoPtr<dl::ITexture> depthBuffer;
 		};
+
+		float indirectIntensity = 1;
+		float directIntensity = 1;
 
 		Pipeline geometryPass;
 		RefCntAutoPtr<IShaderResourceBinding> geomSRB;

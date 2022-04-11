@@ -22,7 +22,9 @@ struct LightField
     int depthTextureWidth;
     int depthTextureHeight;
     float depthProbeSideLength;
-    float padding1,padding2,padding3;
+    float chebBias;
+    float minRayDst;
+    float energyConservation;
 };
 
 // I have to declare as floats and not float3 because float3 is aligned to a float4 thus adding 1 padding which the Host Vertex definition doesn't reflect.

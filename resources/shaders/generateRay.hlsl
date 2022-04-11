@@ -36,11 +36,11 @@ float3 uniform_sample_hemisphere(float u, float v, float m=1)
     return float3(x,y,z);
 }
 
-Ray generateRay(uint2 coord, in float3x3 randomOrientation, int raysPerProbe, int numProbes)
+Ray generateRay(uint2 coord, in float3x3 randomOrientation, int raysPerProbe, int minDst)
 {
     uint probeId = coord.y;
     uint rayId = coord.x;
-    float rayMinDst = 0.25;
+    float rayMinDst = minDst;
     Ray r;
     r.direction = normalize(float3(mul(sphericalFibonacci(rayId,raysPerProbe),randomOrientation)));
     r.origin = float4(probeLocation(probeId),rayMinDst);

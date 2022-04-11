@@ -13,7 +13,7 @@ struct View
     float3 eyePos;
     int showHitLocations;
     int probeID;
-    int p2,p3,p4;
+    float indirectInt, directInt,p4;
 };
 
 ConstantBuffer<View> view;
@@ -73,8 +73,9 @@ float4 main(in PSInput PSIn) : SV_TARGET
     uint w,h;
     rayHitLocations.GetDimensions(w,h);
     //float3 dummy = (rayHitLocations.Load(int3(0,0,0)) + rayTest.Load(int3(0,0,0))) * 0.00001;
-    float3 allLight = (direct + indirect) * albedo.xyz;// + dummy;
+    float3 allLight = (direct * view.directInt + indirect*view.indirectInt) * albedo.xyz;// + dummy;
     bool quit = false;
+    //allLight = allLight / (allLight + 1); // Reinhardt tonemap
     if(view.showHitLocations)
     {
         for(int ray = 0; ray<w && !quit; ray++)

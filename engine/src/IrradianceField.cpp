@@ -21,16 +21,18 @@ void Hym::IrradianceField::Init(int probesX, int probesY, int probesZ, int raysP
 	L.depthProbeSideLength = 16;
 	L.irradianceProbeSideLength = 16;
 	L.normalBias = 0.25f;
+	L.minRayDst = 0.08f;
 	L.irradianceTextureWidth = (L.irradianceProbeSideLength + 2) /* 1px Border around probe left and right */ * L.probeCounts.x * L.probeCounts.y + 2 /* 1px Border around whole texture left and right*/;
 	L.irradianceTextureHeight = (L.irradianceProbeSideLength + 2) * L.probeCounts.z + 2;
 	L.depthTextureWidth = (L.depthProbeSideLength + 2) * L.probeCounts.x * L.probeCounts.y + 2;
 	L.depthTextureHeight = (L.depthProbeSideLength + 2) * L.probeCounts.z + 2;
-	L.probeStartPosition = minScene + glm::vec3(+1.0,+1.0,+1.0);
+	L.probeStartPosition = minScene + glm::vec3(1.f);
 	L.probeStep = (maxScene - minScene - glm::vec3(1)) / (glm::vec3(L.probeCounts) - glm::vec3(1));
 	L.raysPerProbe = raysPerProbe;
+	L.energyConservation = 0.85f;
 
 	updateValues.depthSharpness = 50.0f;
-	updateValues.hysteresis = 0.95f;
+	updateValues.hysteresis = 0.965f;
 	auto probeEnd = L.probeStartPosition + glm::vec3((L.probeCounts - 1)) * L.probeStep;
 	auto probeSpan = probeEnd - L.probeStartPosition;
 
@@ -92,8 +94,8 @@ void Hym::IrradianceField::Init(int probesX, int probesY, int probesZ, int raysP
 		.SetSamplers(ArrayRef<ImmutableSamplerDesc>::MakeRef(samplers, _countof(samplers)))
 		.Create();
 	
-	lightFieldBuffer = UniformBuffer<LightField>("Lightfield Buffer", USAGE_IMMUTABLE, L);
-	updateValuesBuffer = UniformBuffer<UpdateValues>("Update Values Buffer", USAGE_IMMUTABLE, updateValues);
+	lightFieldBuffer = UniformBuffer<LightField>("Lightfield Buffer", USAGE_DEFAULT, L);
+	updateValuesBuffer = UniformBuffer<UpdateValues>("Update Values Buffer", USAGE_DEFAULT, updateValues);
 	randomOrientationBuffer = UniformBuffer<RandomOrientation>("Random Orientation Buffer");
 	
 	computeRaysPass.CreateSRB();
