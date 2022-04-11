@@ -22,6 +22,8 @@ struct HitInfo
 
 };
 
+
+// Reference: https://github.com/DiligentGraphics/DiligentSamples/blob/master/Tutorials/Tutorial22_HybridRendering/assets/RayTracing.csh
 bool traceRay(in Ray ray, out HitInfo info, RaytracingAccelerationStructure tlas)
 {
     RayDesc rdesc;
