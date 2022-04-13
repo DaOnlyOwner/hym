@@ -1,5 +1,6 @@
 build
-resources/scenes
+#resources/scenes
+!resources/scenes/uvsphere
 description/*
 !description/description.tex
 !description/description.pdf
