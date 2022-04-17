@@ -69,8 +69,12 @@ bool traceRay(in Ray ray, out HitInfo info, RaytracingAccelerationStructure tlas
     info.wsHitpoint = query.WorldRayOrigin() + (query.CommittedRayT() * query.WorldRayDirection());
     //info.wsHitpoint = float3(attr.FirstIndex,stride,v1.normalZ);
     info.t = query.CommittedRayT();
-    Material mat = materials[attr.MaterialId];
-    info.color = albedoTexs[NonUniformResourceIndex(mat.albedo)].SampleLevel(tex_sampler,uv,0).xyz;
+    if(attr.MaterialId != MAX_MAT_IDX)
+    {
+        Material mat = materials[attr.MaterialId];
+        info.color = albedoTexs[NonUniformResourceIndex(mat.albedo)].SampleLevel(tex_sampler,uv,0).xyz;
+    }
+    else info.color = float3(0,0,0);
     return true;
 }
 

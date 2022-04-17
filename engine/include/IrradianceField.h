@@ -49,6 +49,7 @@ namespace Hym
 	{
 	public:
 		void Init(int probesX, int probesY, int probesZ, int raysPerProbe, Scene& scene);
+		void createComputeRaysPSO(Hym::Scene& scene);
 		void Draw();
 
 		void SetNormalBias(float bias) {

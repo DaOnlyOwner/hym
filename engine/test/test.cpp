@@ -32,34 +32,11 @@ namespace Hym
 			cam.SetPerspectiveProj(87.f, init.width / (float)init.height, 0.1f, 100000.f);
 			cam.SetEyePos({ 1,3,0 });
 			cam.LookAt({ 1,1,1 });
-			//auto min = Resources::Inst().GetMinScene();
-			//auto max = Resources::Inst().GetMaxScene();
-			//Renderer::Inst().InitTLAS();
-			//Renderer::Inst().InitIrrField(32, 4, 32, 64, min, max);
-			//s.direction = glm::vec3(0, -1, 0.3f);
-			//s.color = glm::vec3(1, 1, 1);
-			//Renderer::Inst().SetSun(s);
 			renderer.Init(scene, probesXYZ[0], probesXYZ[1], probesXYZ[2], raysPerProbe);
-
-			/*auto isNear = [](glm::vec3 a, glm::vec3 b, float rad)
-			{
-				auto le = glm::length(a - b);
-				return le < rad;
-			};
-
-			for (int i = 0; i < res.GetVertexBuffer().GetSize(); i++)
-			{
-				auto& v = res.GetVertexBuffer()[i];
-				if (isNear(v.normal, glm::vec3(0, 0, 0),0.01))
-				{
-					DebugBreak();
-				}
-			}*/
 		}
 
 		virtual void Update(Time time) override
 		{
-			//Resources::Inst().Update(reg);
 			handleUI();
 			renderer.Draw(scene, cam);
 			handle_movement(time);

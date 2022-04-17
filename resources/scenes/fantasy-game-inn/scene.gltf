@@ -1,0 +1,219 @@
+{
+    "asset" : {
+        "generator" : "Khronos glTF Blender I/O v1.8.19",
+        "version" : "2.0"
+    },
+    "extensionsUsed" : [
+        "KHR_materials_unlit"
+    ],
+    "scene" : 0,
+    "scenes" : [
+        {
+            "name" : "Scene",
+            "nodes" : [
+                5
+            ]
+        }
+    ],
+    "nodes" : [
+        {
+            "mesh" : 0,
+            "name" : "TheInn_bakeInn_0",
+            "translation" : [
+                -338.3684387207031,
+                21.178491592407227,
+                -60.664527893066406
+            ]
+        },
+        {
+            "children" : [
+                0
+            ],
+            "name" : "Object_4",
+            "translation" : [
+                0.299285888671875,
+                0.4626731872558594,
+                -1.3800086975097656
+            ]
+        },
+        {
+            "children" : [
+                1
+            ],
+            "name" : "TheInn",
+            "rotation" : [
+                -0.7071068286895752,
+                0,
+                0,
+                0.7071068286895752
+            ],
+            "translation" : [
+                338.0691223144531,
+                62.04453659057617,
+                21.641162872314453
+            ]
+        },
+        {
+            "children" : [
+                2
+            ],
+            "name" : "RootNode"
+        },
+        {
+            "children" : [
+                3
+            ],
+            "name" : "e60bf7258c79439fb8d027617c9bd698.fbx",
+            "rotation" : [
+                0.7071068286895752,
+                0,
+                0,
+                0.7071068286895752
+            ]
+        },
+        {
+            "children" : [
+                4
+            ],
+            "name" : "Sketchfab_model",
+            "rotation" : [
+                -0.7071068286895752,
+                0,
+                0,
+                0.7071068286895752
+            ],
+            "scale" : [
+                0.09887995570898056,
+                0.09887995570898056,
+                0.09887995570898056
+            ]
+        }
+    ],
+    "materials" : [
+        {
+            "doubleSided" : true,
+            "extensions" : {
+                "KHR_materials_unlit" : {}
+            },
+            "name" : "bakeInn",
+            "pbrMetallicRoughness" : {
+                "baseColorTexture" : {
+                    "index" : 0
+                },
+                "metallicFactor" : 0,
+                "roughnessFactor" : 0.9
+            }
+        }
+    ],
+    "meshes" : [
+        {
+            "name" : "TheInn_bakeInn_0",
+            "primitives" : [
+                {
+                    "attributes" : {
+                        "POSITION" : 0,
+                        "NORMAL" : 1,
+                        "TEXCOORD_0" : 2,
+                        "TEXCOORD_1" : 3
+                    },
+                    "indices" : 4,
+                    "material" : 0
+                }
+            ]
+        }
+    ],
+    "textures" : [
+        {
+            "sampler" : 0,
+            "source" : 0
+        }
+    ],
+    "images" : [
+        {
+            "mimeType" : "image/png",
+            "name" : "bakeInn_baseColor",
+            "uri" : "bakeInn_baseColor.png"
+        }
+    ],
+    "accessors" : [
+        {
+            "bufferView" : 0,
+            "componentType" : 5126,
+            "count" : 37837,
+            "max" : [
+                44.948028564453125,
+                74.29710388183594,
+                26.652957916259766
+            ],
+            "min" : [
+                -65.65438842773438,
+                -86.63221740722656,
+                -29.757259368896484
+            ],
+            "type" : "VEC3"
+        },
+        {
+            "bufferView" : 1,
+            "componentType" : 5126,
+            "count" : 37837,
+            "type" : "VEC3"
+        },
+        {
+            "bufferView" : 2,
+            "componentType" : 5126,
+            "count" : 37837,
+            "type" : "VEC2"
+        },
+        {
+            "bufferView" : 3,
+            "componentType" : 5126,
+            "count" : 37837,
+            "type" : "VEC2"
+        },
+        {
+            "bufferView" : 4,
+            "componentType" : 5123,
+            "count" : 57093,
+            "type" : "SCALAR"
+        }
+    ],
+    "bufferViews" : [
+        {
+            "buffer" : 0,
+            "byteLength" : 454044,
+            "byteOffset" : 0
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 454044,
+            "byteOffset" : 454044
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 302696,
+            "byteOffset" : 908088
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 302696,
+            "byteOffset" : 1210784
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 114186,
+            "byteOffset" : 1513480
+        }
+    ],
+    "samplers" : [
+        {
+            "magFilter" : 9729,
+            "minFilter" : 9987
+        }
+    ],
+    "buffers" : [
+        {
+            "byteLength" : 1627668,
+            "uri" : "scene.bin"
+        }
+    ]
+}

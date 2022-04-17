@@ -10,14 +10,10 @@ struct GeometryPassVSPerMeshConstants
 struct VSInput
 {
     float3 pos : ATTRIB0;
-    //float padding : ATTRIB1;
     float3 normal : ATTRIB1;
-    //float padding2 : ATTRIB3;
     //float3 tangent : ATTRIB2;
     //float3 bitangent : ATTRIB3;
     float2 uv : ATTRIB2;
-    //float padding3: ATTRIB5;
-    //float padding4: ATTRIB6;
 };
 
 struct PSInput

@@ -74,11 +74,10 @@ float4 main(in PSInput PSIn) : SV_TARGET
     rayHitLocations.GetDimensions(w,h);
     //float3 dummy = (rayHitLocations.Load(int3(0,0,0)) + rayTest.Load(int3(0,0,0))) * 0.00001;
     float3 allLight = (direct * view.directInt + indirect*view.indirectInt) * albedo.xyz;// + dummy;
-    bool quit = false;
     //allLight = allLight / (allLight + 1); // Reinhardt tonemap
     if(view.showHitLocations)
     {
-        for(int ray = 0; ray<w && !quit; ray++)
+        for(int ray = 0; ray<w; ray++)
         {
             int3 loc = int3(ray,view.probeID,0);
             float3 hitl = rayHitLocations.Load(loc).xyz;
@@ -94,7 +93,6 @@ float4 main(in PSInput PSIn) : SV_TARGET
                     col = float3(1,0,1);
                 }
                 allLight = (col+1)*0.5;
-                quit=true;
                 break;
             }
         }

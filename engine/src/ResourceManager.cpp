@@ -251,7 +251,7 @@ Hym::u32 Hym::ResourceManager::createMaterial(aiMaterial* ai_mat, const std::str
 		}
 		else
 		{
-			offset = std::numeric_limits<u32>::max()-1;
+			offset = GetMaxIdx();
 			return false;
 		}
 	};
@@ -262,7 +262,7 @@ Hym::u32 Hym::ResourceManager::createMaterial(aiMaterial* ai_mat, const std::str
 		materials.push_back(mat);
 		return materials.size() - 1;
 	}
-	else return std::numeric_limits<u32>::max();
+	else return GetMaxIdx();
 }
 
 //#include "Debug.h"

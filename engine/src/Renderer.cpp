@@ -6,13 +6,6 @@
 
 void Hym::Renderer::Init(Scene& scene, int probesX, int probesY, int probesZ, int raysPerProbe)
 {
-    /*BufferDesc sunDesc;
-    sunDesc.BindFlags = BIND_UNIFORM_BUFFER;
-    sunDesc.Name = "Sun Buffer";
-    sunDesc.Usage = USAGE_DYNAMIC;
-    sunDesc.Size = sizeof(Sun);
-    sunDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
-    this->device->CreateBuffer(sunDesc, nullptr, &sunBuffer);*/
     initGeometryBuffers();
     irrField.Init(probesX, probesY, probesZ, raysPerProbe,scene);
     initDebugDrawProbes(scene);
@@ -43,20 +36,8 @@ Hym::dl::SamplerDesc Hym::Renderer::createLinearSampler()
 
 void Hym::Renderer::RebuildSRBs(Scene& scene)
 {   
-    //gen_views(manager.GetNormalTexs(), "normalTexs", SHADER_TYPE_PIXEL);
     initGeometrySRB(scene);
 }
-
-//void Hym::Renderer::InitIrrField(int pX, int pY, int pZ, int raysPerProbe, const glm::vec3& minScene, const glm::vec3& maxScene)
-//{
-//    irrField.Init(pX, pY, pZ, raysPerProbe, minScene, maxScene, sunBuffer);
-//}
-
-//void Hym::Renderer::InitTLAS()
-//{
-//    compositeSRB->GetVariableByName(SHADER_TYPE_PIXEL, "tlas")
-//        ->Set(Resources::Inst().GetTLAS());
-//}
 
 void Hym::Renderer::Draw(Scene& scene, Camera& cam)
 {
@@ -200,38 +181,6 @@ void Hym::Renderer::debugDrawProbes(Scene& scene, Camera& cam)
 
         }
     }
-
-    /*for (int x = 0; x < irrField.GetLightField().probeCounts.x; x++)
-    {
-        for (int y = 0; y < irrField.GetLightField().probeCounts.y; y++)
-        {
-            for (int z = 0; z < irrField.GetLightField().probeCounts.z; z++)
-            {
-                glm::vec3 pos = L.probeStartPosition + glm::vec3(x, y, z) * L.probeStep;
-                glm::mat4 trans = glm::translate(glm::mat4(1.0f), pos);
-                auto normalM = glm::inverse(glm::transpose(trans));
-                {
-                    auto con = geomConstants.Map();
-                    con->model = glm::transpose(trans);
-                    con->normal = glm::transpose(normalM);
-                    con->MVP = glm::transpose(proj * view * (trans * scale));
-                }
-
-                {
-                    auto con = debugProbeData.uniforms.Map();
-                    con->probeID = id++;
-                    con->sideLength = L.irradianceProbeSideLength;
-                }
-
-                DrawIndexedAttribs attrs;
-                attrs.IndexType = VT_UINT32;
-                attrs.NumIndices = debugProbeData.mesh.numIndices;
-                attrs.FirstIndexLocation = debugProbeData.mesh.offsetIndex;
-                attrs.Flags = DRAW_FLAG_NONE;
-                Imm->DrawIndexed(attrs);
-            }
-        }
-    }*/
 }
 
 void Hym::Renderer::initDebugDrawProbes(Hym::Scene& scene)
@@ -271,40 +220,15 @@ void Hym::Renderer::initDebugDrawProbes(Hym::Scene& scene)
     debugProbeData.mesh = model.mesh;
 }
 
-//void Hym::Renderer::DebugShowIrradWeightTex()
-//{
-//    ImGui::Begin("Irradiance Texture");
-//    ImGui::Image(irrField.GetIrrTexView(), { (float)irrField.GetIrrTex()->GetDesc().Width,(float)irrField.GetIrrTex()->GetDesc().Height });
-//    ImGui::Image(irrField.GetWeightTexView(), { (float)irrField.GetWeightTex()->GetDesc().Width, (float)irrField.GetWeightTex()->GetDesc().Height });
-//    ImGui::End();
-//}
-
-//void Hym::Renderer::SetSun(const Sun& sun)
-//{
-//    this->sun = &sun;
-//}
-
 // Reference: https://github.com/DiligentGraphics/DiligentSamples/blob/master/Tutorials/Tutorial19_RenderPasses/src/Tutorial19_RenderPasses.cpp
 void Hym::Renderer::initGeometryPSO(Scene& scene)
 {
     auto& manager = scene.GetResourceManager();
     LayoutElement elems[] = {
         LayoutElement{0, 0, 3, VT_FLOAT32, False},
-        //LayoutElement{1, 0, 1, VT_FLOAT32, false},
-        //LayoutElement{1, 0, 3, VT_FLOAT32, False},
-        //LayoutElement(2, 0, 3, VT_FLOAT32, False),
         LayoutElement(1, 0, 3, VT_FLOAT32, False),
-        //LayoutElement(3, 0, 1, VT_FLOAT32, False),
         LayoutElement(2, 0, 2, VT_FLOAT32, False),
-        //LayoutElement(3, 0, 1, VT_INT32, False)
-        //LayoutElement(5, 0, 1, VT_FLOAT32, False),
-        //LayoutElement(6, 0, 1, VT_FLOAT32, False)
     };
-
-    /*ShaderResourceVariableDesc vars[] =
-    { {SHADER_TYPE_VERTEX, "geomConst", SHADER_RESOURCE_VARIABLE_TYPE_STATIC},
-        //{SHADER_TYPE_PIXEL, "texSampler",SHADER_RESOURCE_VARIABLE_TYPE_STATIC}
-    };*/
 
     auto sdesc = createAnisoSampler();
 
@@ -314,9 +238,12 @@ void Hym::Renderer::initGeometryPSO(Scene& scene)
     };
 
     std::string albedoTexsSize = std::to_string(manager.GetAlbedoTexs().size());
+    std::string maxMatIdx = std::to_string(scene.GetResourceManager().GetMaxIdx());
+
     std::pair<const char*, const char*> macros[] =
     {
-        {"NUM_ALBEDO_TEXS", albedoTexsSize.c_str()}
+        {"NUM_ALBEDO_TEXS", albedoTexsSize.c_str()},
+        { "MAX_MAT_IDX", maxMatIdx.c_str()}
     };
 
     geometryPass
@@ -326,11 +253,7 @@ void Hym::Renderer::initGeometryPSO(Scene& scene)
         .SetPS("Geometry PS", SHADER_RES "/geometry_ps.hlsl", ArrayRef<std::pair<const char*, const char*>>::MakeRef(macros,_countof(macros)))
         .SetName("Geometry Pipeline")
         .SetSamplers(ArrayRef<ImmutableSamplerDesc>::MakeRef(anisoSamplerImmutable,_countof(anisoSamplerImmutable)))
-        //.SetShaderVars(ArrayRef<ShaderResourceVariableDesc>::MakeRef(vars,_countof(vars)))
         .Create();
-
-    //auto& pso = geometryPass.GetPSO();
-    //pso.GetStaticVariableByName(SHADER_TYPE_VERTEX, "geomConst")->Set(geomConstants.GetBuffer());
 
     initGeometrySRB(scene);
 
@@ -343,7 +266,6 @@ void Hym::Renderer::initGeometrySRB(Scene& scene)
     auto& manager = scene.GetResourceManager();
     auto albedos = manager.GetAlbedoTexViews();
     geomSRB->GetVariableByName(SHADER_TYPE_PIXEL, "albedoTexs")->SetArray(albedos.data(), 0, albedos.size());
-    //gen_views(albedos, "albedoTexs", SHADER_TYPE_PIXEL);
     geomSRB->GetVariableByName(SHADER_TYPE_PIXEL, "albedoTexs");
     geomSRB->GetVariableByName(SHADER_TYPE_PIXEL, "materials")->Set(manager.GetMaterialBuffer().GetBuffer()->GetDefaultView(BUFFER_VIEW_SHADER_RESOURCE));
     geomSRB->GetVariableByName(SHADER_TYPE_VERTEX, "geomConst")->Set(geomConstants.GetBuffer());

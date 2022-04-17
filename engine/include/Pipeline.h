@@ -41,7 +41,7 @@ namespace Hym
 	private:
 		RefCntAutoPtr<IPipelineState> pso;
 		RefCntAutoPtr<IShaderResourceBinding> srb;
-		GraphicsPipelineStateCreateInfo ci;
+		GraphicsPipelineStateCreateInfo ci{};
 
 		RefCntAutoPtr<IShader> ps;
 		RefCntAutoPtr<IShader> vs;
@@ -63,7 +63,7 @@ namespace Hym
 		RefCntAutoPtr<IShader> cs;
 		RefCntAutoPtr<IPipelineState> pso;
 		RefCntAutoPtr<IShaderResourceBinding> srb;
-		ComputePipelineStateCreateInfo ci;
+		ComputePipelineStateCreateInfo ci{ };
 	};
 
 }

@@ -1,11 +1,14 @@
 #include "octahedral.hlsl"
 
 RWTexture2D<float4> tex;
-Texture2D rayDirections;
-Texture2D rayHitLocations;
+#if OUTPUT_IRRADIANCE
 Texture2D rayHitRadiance;
+#else
+Texture2D rayHitLocations;
 Texture2D rayHitNormals;
 Texture2D rayOrigins;
+#endif
+Texture2D rayDirections;
 
 struct Values
 {
@@ -68,7 +71,9 @@ void main(uint3 groupId : SV_GroupID,
 	for (int r = 0; r < RAYS_PER_PROBE; ++r) {
 		int3 C = int3(r, relativeProbeID,0);
 		float3 rayDirection    = rayDirections.Load(C).xyz;
-        float3  rayHitRadiance_  = rayHitRadiance.Load(C).xyz * energyConservation; // Today energy is conserved in sampleIrradiance field. Is it needed here?
+#if OUTPUT_IRRADIANCE
+        float3  rayHitRadiance_  = rayHitRadiance.Load(C).xyz * energyConservation; // Energy is conserved in sampleIrradiance field. Is it needed here?
+#else
 		float3  rayHitLocation  = rayHitLocations.Load(C).xyz;
 
         float3 probeLocation = rayOrigins.Load(C).xyz;
@@ -83,6 +88,7 @@ void main(uint3 groupId : SV_GroupID,
 		if (dot(rayHitNormal, rayHitNormal) < epsilon) {
             rayProbeDistance = uniforms.maxDistance;
         }
+#endif
 
 
 #if OUTPUT_IRRADIANCE

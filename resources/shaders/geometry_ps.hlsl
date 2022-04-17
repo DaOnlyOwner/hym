@@ -28,7 +28,11 @@ SamplerState texSampler;
 
 void main(in PSInput PSIn, out PSOutput PSOut)
 {
-    Material mat = materials[PSIn.matIdx];
-    PSOut.Color = albedoTexs[NonUniformResourceIndex(mat.albedo)].Sample(texSampler,PSIn.uv);//float4(1,1,1,1);
+    if(PSIn.matIdx != MAX_MAT_IDX)
+    {
+        Material mat = materials[PSIn.matIdx];
+        PSOut.Color = albedoTexs[NonUniformResourceIndex(mat.albedo)].Sample(texSampler,PSIn.uv);
+    }
+    else PSOut.Color = float4(0,0,0,0); 
     PSOut.Norm = float4(normalize(PSIn.normal.xyz),0);
 }

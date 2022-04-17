@@ -42,9 +42,10 @@ namespace Hym
 		const std::pair<glm::vec3, glm::vec3>& GetMinMax(u64 idx) { return minMaxVec[idx]; }
 		//void CreateBLASForScene(const std::string& scene);
 		void Init();
-		void calcMinMax(const Hym::u64& globalVerticesAt, std::vector<Hym::Vertex>& vertices);
+		u32 GetMaxIdx() { return std::numeric_limits<u32>::max() - 1; }
 		
 	private:
+		void calcMinMax(const Hym::u64& globalVerticesAt, std::vector<Hym::Vertex>& vertices);
 		void preTransformNode(const aiNode& node, const aiScene& scene, std::vector<ModelComponent>& models, std::vector<Vertex>& vertices, std::vector<u32>& indices, std::vector<Material>& materials);
 		Mesh createMesh(u64 vAt, u64 iAt, u64 indexSize, u64 verticesSize, const char* name);
 		u32 createMaterial(aiMaterial* ai_mat, const std::string& meshName, std::vector<Material>& materials);

@@ -114,21 +114,6 @@ Hym::Pipeline& Hym::Pipeline::SetSamplers(const ArrayRef<ImmutableSamplerDesc>& 
     return *this;
 }
 
-//Hym::Pipeline& Hym::Pipeline::setDefault()
-//{
-//    GraphicsPipelineStateCreateInfo psoCi;
-//    auto& desc = psoCi.PSODesc;
-//
-//    psoCi.GraphicsPipeline.SubpassIndex = 0;
-//    psoCi.GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-//    psoCi.GraphicsPipeline.RasterizerDesc.CullMode = CULL_MODE_BACK;
-//    psoCi.GraphicsPipeline.DepthStencilDesc.DepthEnaHym = true;
-//
-//    // Define variaHym type that will be used by default
-//    desc.ResourceLayout.DefaultVariaHymType = SHADER_RESOURCE_VARIAHym_TYPE_STATIC;
-//    return *this;
-//}
-
 Hym::Pipeline& Hym::Pipeline::SetDefaultDeferred()
 {
     ci.GraphicsPipeline.NumRenderTargets = 2;
