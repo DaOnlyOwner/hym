@@ -27,7 +27,6 @@ PRIVATE
 copy_required_dlls(${target})
 endmacro()
 
-
 project(Hym)
 
 
